@@ -6,7 +6,82 @@ import java.time.LocalDateTime;
 @Entity
 @Table(name = "entrega")
 public class Entrega {
-//VS permite seleccionar source action y generate getters and setter para los atributos
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    // Permite diferenciar una entrega de AVANCE de una entrega FINAL.
+    @Column(name = "tipo_entrega", nullable = false)
+    private String tipoEntrega;
+
+    // Momento efectivo en el que se registró la entrega.
+    @Column(name = "fecha_hora", nullable = false)
+    private LocalDateTime fechaHora;
+
+    // Nombre que tenía el archivo cuando lo seleccionó el estudiante.
+    @Column(name = "nombre_original", nullable = false)
+    private String nombreOriginal;
+
+    // Nombre interno y único utilizado para almacenar el archivo.
+    @Column(name = "nombre_almacenado", nullable = false, unique = true)
+    private String nombreAlmacenado;
+
+    // Ubicación utilizada para recuperar el archivo.
+    @Column(name = "ruta_relativa", nullable = false)
+    private String rutaRelativa;
+
+    // Tipo MIME del archivo. Para este proyecto debería ser application/pdf.
+    @Column(name = "mime_type", nullable = false)
+    private String mimeType;
+
+    // Tamaño real del archivo expresado en bytes.
+    @Column(name = "tamano_bytes", nullable = false)
+    private Long tamanoBytes;
+
+    // Ejemplos: PENDIENTE_REVISION, APROBADA o CORRECCION_REQUERIDA.
+    @Column(name = "estado", nullable = false)
+    private String estado;
+
+    // ID del proceso de tesis proveniente del módulo correspondiente.
+    @Column(name = "proceso_tesis_id", nullable = false)
+    private Long procesoTesisId;
+
+    // ID del hito al que corresponde la entrega.
+    @Column(name = "hito_entrega_id", nullable = false)
+    private Long hitoEntregaId;
+
+    // ID del estudiante que presentó el documento.
+    @Column(name = "estudiante_id", nullable = false)
+    private Long estudianteId;
+
+    // La primera entrega será versión 1.
+    @Column(name = "numero_version", nullable = false)
+    private Integer numeroVersion = 1;
+
+    // Constructor vacío requerido por JPA.
+    public Entrega() {
+    }
+
+    /*
+     * Se ejecuta automáticamente antes de guardar una entrega nueva.
+     * Completa los valores iniciales cuando todavía no fueron asignados.
+     */
+    @PrePersist
+    protected void antesDeGuardar() {
+        if (fechaHora == null) {
+            fechaHora = LocalDateTime.now();
+        }
+
+        if (estado == null || estado.isBlank()) {
+            estado = "PENDIENTE_REVISION";
+        }
+
+        if (numeroVersion == null) {
+            numeroVersion = 1;
+        }
+    }
+
     public Long getId() {
         return id;
     }
@@ -95,45 +170,19 @@ public class Entrega {
         this.hitoEntregaId = hitoEntregaId;
     }
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id; // Identificador único
-
-    @Column(name = "tipo_entrega", nullable = false)
-    private String tipoEntrega; // AVANCE o FINAL
-
-    @Column(name = "fecha_hora", nullable = false)
-    private LocalDateTime fechaHora; // Momento efectivo de presentación
-
-    @Column(name = "nombre_original", nullable = false)
-    private String nombreOriginal; // Nombre informado por el archivo del usuario
-
-    @Column(name = "nombre_almacenado", nullable = false, unique = true)
-    private String nombreAlmacenado; // Nombre interno único
-
-    @Column(name = "ruta_relativa", nullable = false)
-    private String rutaRelativa; // Ruta o identificador usado para recuperar el archivo
-
-    @Column(name = "mime_type", nullable = false)
-    private String mimeType; // Tipo MIME validado
-
-    @Column(name = "tamano_bytes", nullable = false)
-    private Long tamanoBytes; // Tamaño real del archivo
-
-    @Column(nullable = false)
-    private String estado; // Estado definido por el proceso de negocio
-
-    // Al ser un modelo modular, se guarda el ID 
-    // en lugar de la relación directa @ManyToOne si las entidades están en módulos separados.
-    @Column(name = "proceso_tesis_id", nullable = false)
-    private Long procesoTesisId; // Clave foránea hacia ProcesoTesis
-
-    @Column(name = "hito_entrega_id")
-    private Long hitoEntregaId; // Clave foránea hacia HitoEntrega
-
-    // JPA exige tener un constructor vacío
-    public Entrega() {
+    public Long getEstudianteId() {
+        return estudianteId;
     }
 
-    
+    public void setEstudianteId(Long estudianteId) {
+        this.estudianteId = estudianteId;
+    }
+
+    public Integer getNumeroVersion() {
+        return numeroVersion;
+    }
+
+    public void setNumeroVersion(Integer numeroVersion) {
+        this.numeroVersion = numeroVersion;
+    }
 }
