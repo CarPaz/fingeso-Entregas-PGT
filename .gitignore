@@ -31,3 +31,6 @@ build/
 
 ### VS Code ###
 .vscode/
+
+# Ignorar credenciales y configuraciones locales
+application-local.properties
