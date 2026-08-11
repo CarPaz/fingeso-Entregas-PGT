@@ -10,6 +10,7 @@ public class Entrega {
     // Clave primaria autogenerada.
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id_Entrega")
     private Long id;
 
     // Permite diferenciar una entrega de AVANCE de una entrega FINAL.
