@@ -54,23 +54,27 @@ public class Entrega {
      * Referencia al proceso de tesis.
      * Será FK hacia proceso_tesis(id) si la tabla está en la misma base.
      */
-    @Column(name = "proceso_tesis_id", nullable = false)
-    private Long procesoTesisId;
+
+    @ManyToOne // un proceso de tesis puede estar asociado a varias entregas 
+    @JoinColumn(name = "id_proceso_tesis", nullable = false)
+    private ProcesoTesis procesoTesis;
 
     /*
      * Referencia al hito correspondiente.
      * Será FK hacia hito_entrega(id) si la tabla está en la misma base.
      */
-    @Column(name = "hito_entrega_id", nullable = false)
-    private Long hitoEntregaId;
+    @ManyToOne // un hito puede estar asociado a varias entregas 
+    @JoinColumn(name = "id_hito_entrega", nullable = false)
+    private HitoEntrega hitoEntrega;
 
     /*
      * Referencia al estudiante que presentó el documento.
      * En el modelo conceptual, Estudiante corresponde al Tesista.
      * Será FK hacia estudiante(id) o tesista(id), según el nombre acordado.
      */
-    @Column(name = "estudiante_id", nullable = false)
-    private Long estudianteId;
+    
+    @Column(name = "id_estudiante", nullable = false)
+    private Long idEstudiante;
 
     // Número de versión del documento entregado.
     @Column(name = "numero_version", nullable = false)
@@ -172,29 +176,30 @@ public class Entrega {
     public void setEstado(String estado) {
         this.estado = estado;
     }
+    
 
-    public Long getProcesoTesisId() {
-        return procesoTesisId;
+    public ProcesoTesis getProcesoTesis() {
+        return procesoTesis;
     }
 
-    public void setProcesoTesisId(Long procesoTesisId) {
-        this.procesoTesisId = procesoTesisId;
+    public void setProcesoTesis(ProcesoTesis procesoTesis) {
+        this.procesoTesis = procesoTesis;
     }
 
-    public Long getHitoEntregaId() {
-        return hitoEntregaId;
+    public HitoEntrega getHitoEntrega() {
+        return hitoEntrega;
     }
 
-    public void setHitoEntregaId(Long hitoEntregaId) {
-        this.hitoEntregaId = hitoEntregaId;
+    public void setHitoEntrega(HitoEntrega hitoEntrega) {
+        this.hitoEntrega = hitoEntrega;
     }
 
-    public Long getEstudianteId() {
-        return estudianteId;
+    public Long getIdEstudiante() {
+        return idEstudiante;
     }
 
-    public void setEstudianteId(Long estudianteId) {
-        this.estudianteId = estudianteId;
+    public void setIdEstudiante(Long idEstudiante) {
+        this.idEstudiante = idEstudiante;
     }
 
     public Integer getNumeroVersion() {
@@ -204,4 +209,6 @@ public class Entrega {
     public void setNumeroVersion(Integer numeroVersion) {
         this.numeroVersion = numeroVersion;
     }
+
+    
 }
