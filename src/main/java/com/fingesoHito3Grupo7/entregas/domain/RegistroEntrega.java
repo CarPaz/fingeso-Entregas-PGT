@@ -4,11 +4,11 @@ import jakarta.persistence.*;
 
 @Entity
 @Table(name = "registro_entrega")
-public class RegistroEntregaDomain {
+public class RegistroEntrega {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "id_registro_entrega")
+    @Column(name = "id_registro_entrega", nullable = false)
     private Long idRegistroEntrega;
 
     

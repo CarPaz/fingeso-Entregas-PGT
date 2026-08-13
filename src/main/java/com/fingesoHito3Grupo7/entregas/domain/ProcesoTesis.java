@@ -9,22 +9,22 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 
 @Entity
-@Table(name = "procesoTesis")
-public class ProcesoTesisDomain {
+@Table(name = "proceso_tesis")
+public class ProcesoTesis {
 
 
     // Clave primaria autogenerada.
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "id_procesoT")
+    @Column(name = "id_proceso_tesis", nullable = false)
     private Long idProcesoT;
 
 
-    @Column(name = "estado" , length = 50)
+    @Column(name = "estado", nullable = false , length = 50)
     private  String estado;
 
 
-    @Column(name = "etapa_actual", length = 50)
+    @Column(name = "etapa_actual", nullable = false, length = 50)
     private String etapaActual;
 
     @Column(name =  "calificacion_final")
