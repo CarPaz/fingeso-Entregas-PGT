@@ -34,3 +34,5 @@ build/
 
 # Ignorar credenciales y configuraciones locales
 application-local.properties
+
+uploads/
