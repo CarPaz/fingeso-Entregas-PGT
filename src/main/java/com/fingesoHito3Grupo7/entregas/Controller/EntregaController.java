@@ -1,4 +1,4 @@
-package com.fingesoHito3Grupo7.entregas.Controller;
+package com.fingesoHito3Grupo7.entregas.controller;
 
 import com.fingesoHito3Grupo7.entregas.domain.Entrega;
 import com.fingesoHito3Grupo7.entregas.service.EntregaService;
@@ -18,11 +18,11 @@ import java.util.List;
 @RequestMapping("/api/entregas")
 //Para conexion con el front
 @CrossOrigin("*") 
-public class EntregaController {
+public class entregaController {
     //coneccion a la base de datos 
     private final EntregaService entregaService;
 
-    EntregaController(EntregaService entregaService) {
+    entregaController(EntregaService entregaService) {
         this.entregaService = entregaService;
     }
 

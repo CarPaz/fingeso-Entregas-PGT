@@ -29,7 +29,7 @@ public class EntregaService {
             String rutaArchivoGuardado = fileStorageService.guardarArchivo(archivo);
             
             //Inyectarle la ruta obtenida al objeto entrega
-            entrega.setRutaArchivo(rutaArchivoGuardado);
+            entrega.setRutaRelativaArchivo(rutaArchivoGuardado);
         }
 
         //Guardar la entrega completa con la ruta del archivo en PostgreSQL
