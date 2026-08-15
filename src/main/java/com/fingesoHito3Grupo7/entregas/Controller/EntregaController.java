@@ -1,9 +1,12 @@
 package com.fingesoHito3Grupo7.entregas.Controller;
 
 import com.fingesoHito3Grupo7.entregas.domain.Entrega;
-import com.fingesoHito3Grupo7.entregas.repository.EntregaRepository;
+import com.fingesoHito3Grupo7.entregas.service.EntregaService;
+
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 //Este archivo es para recibir las  peticiones HTTP que lleguen desde el front
@@ -17,22 +20,25 @@ import java.util.List;
 @CrossOrigin("*") 
 public class EntregaController {
     //coneccion a la base de datos 
-    private final EntregaRepository entregaRepository;
+    private final EntregaService entregaService;
 
-    EntregaController(EntregaRepository entregaRepository) {
-        this.entregaRepository = entregaRepository;
+    EntregaController(EntregaService entregaService) {
+        this.entregaService = entregaService;
     }
 
     // Obtener todas las entregas
     @GetMapping
     public List<Entrega> obtenerEntregas() {
-        return entregaRepository.findAll();
+        return entregaService.obtenerTodasLasEntregas();
     }
 
     // Crear una nueva entrega
-    @PostMapping
-    public ResponseEntity<Entrega> crearEntrega(@RequestBody Entrega entrega) {
-        Entrega nuevaEntrega = entregaRepository.save(entrega);
+    @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<Entrega> crearEntrega(
+            @RequestPart("entrega") Entrega entrega,
+            @RequestPart(value = "archivo", required = false) MultipartFile archivo) {
+        
+        Entrega nuevaEntrega = entregaService.crearEntrega(entrega, archivo);
         return ResponseEntity.ok(nuevaEntrega);
     }
 }

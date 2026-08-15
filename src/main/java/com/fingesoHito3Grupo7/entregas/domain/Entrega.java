@@ -34,8 +34,8 @@ public class Entrega {
     private String nombreAlmacenado;
 
     // Ubicación utilizada para recuperar el archivo.
-    @Column(name = "ruta_relativa", nullable = false, length = 500)
-    private String rutaRelativa;
+    @Column(name = "ruta_archivo", nullable = false, length = 500)
+    private String rutaArchivo;
 
     // Tipo MIME del archivo. Para este proyecto debería ser application/pdf.
     @Column(name = "mime_type", nullable = false, length = 100)
@@ -140,12 +140,12 @@ public class Entrega {
         this.nombreAlmacenado = nombreAlmacenado;
     }
 
-    public String getRutaRelativa() {
-        return rutaRelativa;
+    public String getRutaArchivo() {
+        return rutaArchivo;
     }
 
-    public void setRutaRelativa(String rutaRelativa) {
-        this.rutaRelativa = rutaRelativa;
+    public void setRutaArchivo(String rutaArchivo) {
+        this.rutaArchivo = rutaArchivo;
     }
 
     public String getMimeType() {
