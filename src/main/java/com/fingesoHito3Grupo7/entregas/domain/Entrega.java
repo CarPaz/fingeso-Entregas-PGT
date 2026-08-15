@@ -10,8 +10,8 @@ public class Entrega {
     // Clave primaria autogenerada.
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "id_Entrega")
-    private Long id;
+    @Column(name = "id_entrega")
+    private Long idEntrega;
 
     // Permite diferenciar una entrega de AVANCE de una entrega FINAL.
     @Column(name = "tipo_entrega", nullable = false, length = 20)
@@ -21,7 +21,7 @@ public class Entrega {
     @Column(name = "fecha_hora", nullable = false)
     private LocalDateTime fechaHora;
 
-    // Nombre que tenía el archivo cuando lo seleccionó el estudiante.
+    // Nombre que tenía el archivo cuando fue seleccionado.
     @Column(name = "nombre_original", nullable = false, length = 255)
     private String nombreOriginal;
 
@@ -38,7 +38,7 @@ public class Entrega {
     @Column(name = "ruta_relativa", nullable = false, length = 500)
     private String rutaRelativa;
 
-    // Tipo MIME del archivo. Para este proyecto debería ser application/pdf.
+    // Tipo MIME validado. Para este proyecto debería ser application/pdf.
     @Column(name = "mime_type", nullable = false, length = 100)
     private String mimeType;
 
@@ -51,28 +51,35 @@ public class Entrega {
     private String estado;
 
     /*
-     * Referencia al proceso de tesis.
-     * Será FK hacia proceso_tesis(id) si la tabla está en la misma base.
+     * Relación (FK):
+     * entrega.id_proceso_tesis -> proceso_tesis.id_proceso_tesis
      */
-
-    @ManyToOne // un proceso de tesis puede estar asociado a varias entregas 
-    @JoinColumn(name = "id_proceso_tesis", nullable = false)
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(
+        name = "id_proceso_tesis",
+        referencedColumnName = "id_proceso_tesis",
+        nullable = false,
+        foreignKey = @ForeignKey(name = "fk_entrega_proceso_tesis")
+    )
     private ProcesoTesis procesoTesis;
 
     /*
-     * Referencia al hito correspondiente.
-     * Será FK hacia hito_entrega(id) si la tabla está en la misma base.
+     * Relación (FK):
+     * entrega.id_hito_entrega -> hito_entrega.id_hito_entrega
      */
-    @ManyToOne // un hito puede estar asociado a varias entregas 
-    @JoinColumn(name = "id_hito_entrega", nullable = false)
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(
+        name = "id_hito_entrega",
+        referencedColumnName = "id_hito_entrega",
+        nullable = false,
+        foreignKey = @ForeignKey(name = "fk_entrega_hito_entrega")
+    )
     private HitoEntrega hitoEntrega;
 
     /*
-     * Referencia al estudiante que presentó el documento.
-     * En el modelo conceptual, Estudiante corresponde al Tesista.
-     * Será FK hacia estudiante(id) o tesista(id), según el nombre acordado.
+     * Referencia al Estudiante/Tesista.
+     * Seguirá siendo una referencia lógica hasta que exista su entidad.
      */
-    
     @Column(name = "id_estudiante", nullable = false)
     private Long idEstudiante;
 
@@ -85,8 +92,7 @@ public class Entrega {
     }
 
     /*
-     * Se ejecuta automáticamente antes de guardar una entrega nueva.
-     * Completa los valores iniciales que todavía no fueron asignados.
+     * Asigna los valores iniciales antes de guardar una entrega nueva.
      */
     @PrePersist
     protected void antesDeGuardar() { // Revisa que estén los datos obligatorios y asigna valores por defecto si es necesario
@@ -103,14 +109,13 @@ public class Entrega {
         }
     }
 
-    // |Getters y Setters|
-
-    public Long getId() { 
-        return id;
+	// |GETTERS & SETTERS|
+    public Long getIdEntrega() {
+        return idEntrega;
     }
 
-    public void setId(Long id) {
-        this.id = id;
+    public void setIdEntrega(Long idEntrega) {
+        this.idEntrega = idEntrega;
     }
 
     public String getTipoEntrega() {
@@ -176,7 +181,6 @@ public class Entrega {
     public void setEstado(String estado) {
         this.estado = estado;
     }
-    
 
     public ProcesoTesis getProcesoTesis() {
         return procesoTesis;
@@ -209,6 +213,4 @@ public class Entrega {
     public void setNumeroVersion(Integer numeroVersion) {
         this.numeroVersion = numeroVersion;
     }
-
-    
 }

@@ -1,6 +1,5 @@
 package com.fingesoHito3Grupo7.entregas.domain;
 
-
 import jakarta.persistence.*;
 import java.util.ArrayList;
 import java.util.List;
@@ -9,37 +8,49 @@ import java.util.List;
 @Table(name = "proceso_tesis")
 public class ProcesoTesis {
 
-
     // Clave primaria autogenerada.
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "id_proceso_tesis", nullable = false)
+    @Column(name = "id_proceso_tesis")
     private Long idProcesoTesis;
 
+    // Estado general del proceso de tesis.
+    @Column(name = "estado", nullable = false, length = 50)
+    private String estado;
 
-    @Column(name = "estado", nullable = false , length = 50)
-    private  String estado;
-
-
+    // Etapa actual en la que se encuentra el proceso.
     @Column(name = "etapa_actual", nullable = false, length = 50)
     private String etapaActual;
 
-    @Column(name =  "calificacion_final")
+    /*
+     * Puede permanecer sin valor mientras el proceso de tesis
+     * no tenga una calificación final.
+     */
+    @Column(name = "calificacion_final")
     private Double calificacionFinal;
 
-    //relaciones con tablas
-    //puede estar relacionado con mas de una entrega
-    @OneToMany(mappedBy = "procesoTesis", cascade = CascadeType.ALL, orphanRemoval = true)// tener cuidado con cascade!! si se borra un proceso se borraran sus entregas en la bd
-    private List<Entrega> entregas = new ArrayList<>(); //lista de entregas 
+    /*
+     * Un proceso de tesis puede tener varias entregas.
+     * mappedBy corresponde al atributo procesoTesis de Entrega.java.
+     *
+     * No utilizamos CascadeType.ALL ni orphanRemoval para evitar
+     * que al eliminar un proceso se borren automáticamente sus entregas.
+     */
+    @OneToMany(mappedBy = "procesoTesis")
+    private List<Entrega> entregas = new ArrayList<>();
 
-    //puede estar relacionado con mas de un hito
-    @OneToMany(mappedBy = "procesoTesis", cascade = CascadeType.ALL, orphanRemoval = true)
+    /*
+     * Un proceso de tesis puede tener varios hitos.
+     * mappedBy corresponde al atributo procesoTesis de HitoEntrega.java.
+     */
+    @OneToMany(mappedBy = "procesoTesis")
     private List<HitoEntrega> hitos = new ArrayList<>();
 
-    // Constructor vacio
+    // Constructor vacío requerido por JPA.
     public ProcesoTesis() {
     }
-    //getters y setters 
+
+	// |GETTERS & SETTERS|
     public Long getIdProcesoTesis() {
         return idProcesoTesis;
     }
@@ -87,7 +98,4 @@ public class ProcesoTesis {
     public void setHitos(List<HitoEntrega> hitos) {
         this.hitos = hitos;
     }
-
-    
-
 }

@@ -1,9 +1,7 @@
 package com.fingesoHito3Grupo7.entregas.domain;
 
-
-
-import java.time.LocalDateTime;
 import jakarta.persistence.*;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -11,44 +9,56 @@ import java.util.List;
 @Table(name = "hito_entrega")
 public class HitoEntrega {
 
-
+    // Clave primaria autogenerada.
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "id_hito_entrega", nullable = false)
+    @Column(name = "id_hito_entrega")
     private Long idHitoEntrega;
 
-
-    @Column(name = "nombre",length = 100, nullable = false)
+    // Nombre descriptivo del hito.
+    @Column(name = "nombre", nullable = false, length = 100)
     private String nombre;
 
-    @Column(name = "fecha_limite")
+    // Fecha y hora límite para realizar la entrega.
+    @Column(name = "fecha_limite", nullable = false)
     private LocalDateTime fechaLimite;
 
-    //formato pdf ?
-    @Column(name ="formato", nullable = false)
+    // Formato permitido para el documento, por ejemplo: PDF.
+    @Column(name = "formato", nullable = false, length = 30)
     private String formato;
 
-    // no estoy seguro si tenemos que avisar al ususario si se acerca un hito
-    // ejemplos Atrasado Enviado Pendiente
-    @Column(name = "estado", nullable = false)
+    // Ejemplos: PENDIENTE, ABIERTO, CERRADO o ATRASADO.
+    @Column(name = "estado", nullable = false, length = 30)
     private String estado;
 
-    //relaciones
+    /*
+     * Un hito puede recibir varias entregas.
+     * mappedBy apunta al atributo hitoEntrega de Entrega.java.
+     *
+     * No se utiliza CascadeType.ALL ni orphanRemoval para evitar que
+     * una eliminación del hito borre las entregas accidentalmente.
+     */
+    @OneToMany(mappedBy = "hitoEntrega")
+    private List<Entrega> entregas = new ArrayList<>();
 
-    //puede estar relacionado con mas de una entrega
-    @OneToMany(mappedBy = "hitoEntrega", cascade = CascadeType.ALL, orphanRemoval = true) // tener cuidado con cascade!! si se borra un proceso se borraran sus entregas en la bd
-    private List<Entrega> entregas = new ArrayList<>(); //lista de entregas
-
-    //hito entrega esta relacionado con proceso de tesis, el cual puede tener varios hitos
-    @ManyToOne
-    @JoinColumn(name = "id_proceso_tesis", nullable = false)
+    /*
+     * Relación:
+     * hito_entrega.id_proceso_tesis -> proceso_tesis.id_proceso_tesis
+     */
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(
+        name = "id_proceso_tesis",
+        referencedColumnName = "id_proceso_tesis",
+        nullable = false,
+        foreignKey = @ForeignKey(name = "fk_hito_proceso_tesis")
+    )
     private ProcesoTesis procesoTesis;
-    
+
     // Constructor vacío requerido por JPA.
     public HitoEntrega() {
     }
 
-    //getters y setters 
+	// |GETTERS & SETTERS|
     public Long getIdHitoEntrega() {
         return idHitoEntrega;
     }
@@ -104,8 +114,4 @@ public class HitoEntrega {
     public void setProcesoTesis(ProcesoTesis procesoTesis) {
         this.procesoTesis = procesoTesis;
     }
-
-    
-
-
 }
