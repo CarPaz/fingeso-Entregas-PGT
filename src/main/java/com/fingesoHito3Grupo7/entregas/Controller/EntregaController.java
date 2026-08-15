@@ -1,9 +1,11 @@
 package com.fingesoHito3Grupo7.entregas.controller;
 
-import com.fingesoHito3Grupo7.entregas.domain.Entrega;
+
+import com.fingesoHito3Grupo7.entregas.dto.EntregaDTO;
+import com.fingesoHito3Grupo7.entregas.dto.EntregaResponseDTO;
 import com.fingesoHito3Grupo7.entregas.service.EntregaService;
 
-import org.springframework.http.MediaType;
+
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -28,17 +30,18 @@ public class entregaController {
 
     // Obtener todas las entregas
     @GetMapping
-    public List<Entrega> obtenerEntregas() {
+    public List<EntregaResponseDTO> obtenerEntregas() {
         return entregaService.obtenerTodasLasEntregas();
     }
 
     // Crear una nueva entrega
-    @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<Entrega> crearEntrega(
-            @RequestPart("entrega") Entrega entrega,
-            @RequestPart(value = "archivo", required = false) MultipartFile archivo) {
+    @PostMapping
+    public ResponseEntity<EntregaResponseDTO> crearEntrega(
+            @RequestPart("entrega") EntregaDTO entregaDTO,
+            @RequestPart(value = "archivo") MultipartFile archivo) {
         
-        Entrega nuevaEntrega = entregaService.crearEntrega(entrega, archivo);
+        // Guardamos el resultado en la variable del tipo correcto
+        EntregaResponseDTO nuevaEntrega = entregaService.crearEntrega(entregaDTO, archivo);
         return ResponseEntity.ok(nuevaEntrega);
     }
 }

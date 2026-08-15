@@ -24,10 +24,12 @@ public class FileStorageService {
             // Crea la carpeta de almacenamiento si no existe
             Files.createDirectories(this.rootLocation);
 
-            // Genera un nombre unico para evitar que dos archivos con el mismo nombre se sobrescriban
+            // limpiar el nombre original del archivo
             String nombreOriginal = file.getOriginalFilename();
+            nombreOriginal = nombreOriginal.replaceAll("[^a-zA-Z0-9\\.\\-]", "_");
+            //General nombre unico
             String nombreUnico = UUID.randomUUID().toString() + "_" + nombreOriginal;
-            
+            //Construir ruta de destino final
             Path destino = this.rootLocation.resolve(nombreUnico);
 
             // Copia el archivo recibido a la carpeta destino
@@ -35,8 +37,8 @@ public class FileStorageService {
                 Files.copy(inputStream, destino, StandardCopyOption.REPLACE_EXISTING);
             }
 
-            // Retorna la ruta en formato texto para que sea guardada en PostgreSQL
-            return destino.toString();
+            // Retornar el nombre unico(ruta relativa)
+            return nombreUnico;
         } catch (IOException e) {
             throw new RuntimeException("Error al guardar el archivo en disco", e);
         }
