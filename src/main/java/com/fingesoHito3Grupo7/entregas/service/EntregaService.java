@@ -79,7 +79,7 @@ public class EntregaService {
         }
          
         //Validar y asignar los datos obligatorios del DTO
-        if (entregaDTO.getTipoEntrega() == null || entregaDTO.getTipoEntrega().igiBlank()) {
+        if (entregaDTO.getTipoEntrega() == null || entregaDTO.getTipoEntrega().isBlank()) {
             throw new IllegalArgumentException("Error: El tipo de entrega es obligatorio.");
         }
         entrega.setTipoEntrega(entregaDTO.getTipoEntrega());
