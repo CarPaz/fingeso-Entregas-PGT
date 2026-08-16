@@ -125,14 +125,14 @@ class EntregaServiceTest {
                     return entrega;
                 });
 
-        EntregaResponseDTO respuesta =
-                entregaService.crearEntrega(dto, archivo);
+        EntregaResponseDTO respuesta
+                = entregaService.crearEntrega(dto, archivo);
 
         /*
          * Captura de la entidad enviada al repositorio.
          */
-        ArgumentCaptor<Entrega> captor =
-                ArgumentCaptor.forClass(Entrega.class);
+        ArgumentCaptor<Entrega> captor
+                = ArgumentCaptor.forClass(Entrega.class);
 
         verify(entregaRepository).save(captor.capture());
 
@@ -174,5 +174,148 @@ class EntregaServiceTest {
         assertEquals(2L, respuesta.getIdHitoEntrega());
         assertEquals(3L, respuesta.getIdEstudiante());
         assertEquals(3, respuesta.getNumeroVersion());
+    }
+
+    @Test
+    void debeRegistrarEntregaFinalConLaSiguienteVersion() {
+        /*
+     * Datos que simulan registros existentes.
+         */
+        ProcesoTesis proceso = new ProcesoTesis();
+        proceso.setIdProcesoTesis(1L);
+
+        HitoEntrega hito = new HitoEntrega();
+        hito.setIdHitoEntrega(2L);
+        hito.setProcesoTesis(proceso);
+
+        Tesista tesista = new Tesista();
+        tesista.setIdUsuario(3L);
+
+        /*
+     * Ya existe una entrega FINAL con versión 1.
+     * La nueva entrega FINAL debe registrarse como versión 2.
+         */
+        Entrega entregaFinalAnterior = new Entrega();
+        entregaFinalAnterior.setNumeroVersion(1);
+
+        EntregaDTO dto = new EntregaDTO();
+        dto.setIdProcesoTesis(1L);
+        dto.setIdHitoEntrega(2L);
+        dto.setIdEstudiante(3L);
+
+        /*
+     * Archivo simulado con nombre de entrega final
+     * y con la firma válida de un PDF.
+         */
+        MockMultipartFile archivo = new MockMultipartFile(
+                "archivo",
+                "entrega-final.pdf",
+                "application/pdf",
+                "%PDF-1.4 contenido final de prueba"
+                        .getBytes(StandardCharsets.US_ASCII)
+        );
+
+        /*
+     * Respuestas simuladas de los repositorios.
+         */
+        when(procesoTesisRepository.findById(1L))
+                .thenReturn(Optional.of(proceso));
+
+        when(hitoEntregaRepository.findById(2L))
+                .thenReturn(Optional.of(hito));
+
+        when(tesistaRepository.findById(3L))
+                .thenReturn(Optional.of(tesista));
+
+        /*
+     * La búsqueda utiliza FINAL, por lo que su versionado
+     * es independiente del versionado de AVANCE.
+         */
+        when(entregaRepository
+                .findTopByProcesoTesisAndHitoEntregaAndTipoEntregaOrderByNumeroVersionDesc(
+                        proceso,
+                        hito,
+                        "FINAL"
+                ))
+                .thenReturn(Optional.of(entregaFinalAnterior));
+
+        when(fileStorageService.guardarArchivo(archivo))
+                .thenReturn(
+                        "./storage/entregas/final-interno.pdf"
+                );
+
+        /*
+     * Se simula que PostgreSQL genera el ID 20 al guardar.
+         */
+        when(entregaRepository.save(any(Entrega.class)))
+                .thenAnswer(invocacion -> {
+                    Entrega entrega = invocacion.getArgument(0);
+                    entrega.setIdEntrega(20L);
+                    return entrega;
+                });
+
+        /*
+     * Se ejecuta específicamente el registro de entrega FINAL.
+         */
+        EntregaResponseDTO respuesta
+                = entregaService.crearEntregaFinal(dto, archivo);
+
+        /*
+     * Se captura la entidad que fue enviada al repositorio.
+         */
+        ArgumentCaptor<Entrega> captor
+                = ArgumentCaptor.forClass(Entrega.class);
+
+        verify(entregaRepository).save(captor.capture());
+
+        Entrega registrada = captor.getValue();
+
+        /*
+     * Comprobación de las reglas de la entrega final.
+         */
+        assertEquals("FINAL", registrada.getTipoEntrega());
+        assertEquals(
+                "PENDIENTE_REVISION",
+                registrada.getEstado()
+        );
+        assertEquals(2, registrada.getNumeroVersion());
+        assertNotNull(registrada.getFechaHora());
+
+        assertSame(proceso, registrada.getProcesoTesis());
+        assertSame(hito, registrada.getHitoEntrega());
+        assertSame(tesista, registrada.getEstudiante());
+
+        assertEquals(
+                "entrega-final.pdf",
+                registrada.getNombreOriginal()
+        );
+        assertEquals(
+                "final-interno.pdf",
+                registrada.getNombreAlmacenado()
+        );
+        assertEquals(
+                "application/pdf",
+                registrada.getMimeType()
+        );
+
+        /*
+     * También se verifica el DTO devuelto al frontend.
+         */
+        assertEquals(20L, respuesta.getIdEntrega());
+        assertEquals(1L, respuesta.getIdProcesoTesis());
+        assertEquals(2L, respuesta.getIdHitoEntrega());
+        assertEquals(3L, respuesta.getIdEstudiante());
+        assertEquals("FINAL", respuesta.getTipoEntrega());
+        assertEquals(2, respuesta.getNumeroVersion());
+
+        /*
+     * Se confirma que la consulta de versión utilizó FINAL.
+         */
+        verify(entregaRepository)
+                .findTopByProcesoTesisAndHitoEntregaAndTipoEntregaOrderByNumeroVersionDesc(
+                        proceso,
+                        hito,
+                        "FINAL"
+                );
     }
 }

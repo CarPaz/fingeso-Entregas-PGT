@@ -73,10 +73,51 @@ public class EntregaController {
             @RequestPart("archivo") MultipartFile archivo
     ) {
         EntregaResponseDTO nuevaEntrega =
-                entregaService.crearEntrega(entregaDTO, archivo);
+                entregaService.crearEntrega(
+                        entregaDTO,
+                        archivo
+                );
 
         /*
          * HTTP 201 indica que el registro fue creado correctamente.
+         */
+        return ResponseEntity
+                .status(HttpStatus.CREATED)
+                .body(nuevaEntrega);
+    }
+
+    /*
+     * Registra una nueva entrega final.
+     *
+     * POST /api/entregas/final
+     *
+     * El tipo FINAL no se recibe libremente desde el frontend.
+     * El servicio lo asigna automáticamente para evitar datos incorrectos.
+     */
+    @PostMapping(
+            value = "/final",
+            consumes = MediaType.MULTIPART_FORM_DATA_VALUE
+    )
+    public ResponseEntity<EntregaResponseDTO> crearEntregaFinal(
+            /*
+             * Parte JSON con los identificadores del proceso,
+             * hito y estudiante.
+             */
+            @RequestPart("entrega") EntregaDTO entregaDTO,
+
+            /*
+             * Archivo PDF obligatorio.
+             */
+            @RequestPart("archivo") MultipartFile archivo
+    ) {
+        EntregaResponseDTO nuevaEntrega =
+                entregaService.crearEntregaFinal(
+                        entregaDTO,
+                        archivo
+                );
+
+        /*
+         * HTTP 201 indica que la entrega final fue creada correctamente.
          */
         return ResponseEntity
                 .status(HttpStatus.CREATED)

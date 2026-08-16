@@ -35,9 +35,11 @@ public class EntregaService {
 
     /*
      * Estos valores son definidos por el servidor.
-     * El cliente no decide si la entrega es un avance ni su estado inicial.
+     * El cliente no decide el tipo ni el estado inicial de la entrega.
      */
     private static final String TIPO_AVANCE = "AVANCE";
+    private static final String TIPO_FINAL = "FINAL";
+
     private static final String ESTADO_PENDIENTE_REVISION =
             "PENDIENTE_REVISION";
 
@@ -121,13 +123,18 @@ public class EntregaService {
         dto.setNombreAlmacenado(entrega.getNombreAlmacenado());
         dto.setMimeType(entrega.getMimeType());
         dto.setTamanoBytes(entrega.getTamanoBytes());
-        dto.setRutaRelativaArchivo(entrega.getRutaRelativaArchivo());
+        dto.setRutaRelativaArchivo(
+                entrega.getRutaRelativaArchivo()
+        );
 
         return dto;
     }
 
     /*
-     * Registra una nueva entrega de tipo AVANCE.
+     * Registra una entrega de avance.
+     *
+     * Se conserva este nombre para mantener compatibilidad
+     * con el controlador existente.
      *
      * @Transactional mantiene las operaciones de base de datos dentro
      * de una misma transacción. Si ocurre un error al guardar en PostgreSQL,
@@ -138,6 +145,40 @@ public class EntregaService {
             EntregaDTO entregaDTO,
             MultipartFile archivo
     ) {
+        return registrarEntrega(
+                entregaDTO,
+                archivo,
+                TIPO_AVANCE
+        );
+    }
+
+    /*
+     * Registra una entrega final.
+     *
+     * Utiliza las mismas validaciones y reglas generales del avance,
+     * pero almacena el tipo de entrega como FINAL.
+     */
+    @Transactional
+    public EntregaResponseDTO crearEntregaFinal(
+            EntregaDTO entregaDTO,
+            MultipartFile archivo
+    ) {
+        return registrarEntrega(
+                entregaDTO,
+                archivo,
+                TIPO_FINAL
+        );
+    }
+
+    /*
+     * Contiene las validaciones y operaciones compartidas
+     * por las entregas de AVANCE y FINAL.
+     */
+    private EntregaResponseDTO registrarEntrega(
+            EntregaDTO entregaDTO,
+            MultipartFile archivo,
+            String tipoEntrega
+    ) {
         /*
          * El DTO contiene los identificadores enviados por el frontend.
          */
@@ -146,7 +187,7 @@ public class EntregaService {
                     "Los datos de la entrega son obligatorios."
             );
         }
-        
+
         /*
          * Los tres identificadores son obligatorios antes de consultar
          * sus respectivos repositorios.
@@ -227,16 +268,18 @@ public class EntregaService {
 
         /*
          * Se busca la última entrega correspondiente al mismo proceso,
-         * hito y tipo AVANCE.
+         * hito y tipo de entrega.
          *
-         * Si existe, la nueva versión será la anterior más uno.
-         * Si no existe, esta será la primera versión.
+         * AVANCE y FINAL mantienen secuencias de versiones independientes.
+         *
+         * Si existe una entrega anterior del mismo tipo, la nueva versión
+         * será la anterior más uno. Si no existe, será la versión uno.
          */
         int siguienteVersion = entregaRepository
                 .findTopByProcesoTesisAndHitoEntregaAndTipoEntregaOrderByNumeroVersionDesc(
                         proceso,
                         hito,
-                        TIPO_AVANCE
+                        tipoEntrega
                 )
                 .map(ultimaEntrega ->
                         ultimaEntrega.getNumeroVersion() + 1
@@ -276,8 +319,11 @@ public class EntregaService {
 
         /*
          * Datos de negocio establecidos automáticamente por el servidor.
+         *
+         * El tipo recibido por este método solamente puede provenir
+         * de crearEntrega o crearEntregaFinal.
          */
-        entrega.setTipoEntrega(TIPO_AVANCE);
+        entrega.setTipoEntrega(tipoEntrega);
         entrega.setFechaHora(LocalDateTime.now());
         entrega.setEstado(ESTADO_PENDIENTE_REVISION);
         entrega.setNumeroVersion(siguienteVersion);
