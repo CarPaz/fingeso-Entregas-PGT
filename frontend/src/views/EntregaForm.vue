@@ -1,6 +1,6 @@
 <script setup>
 import { ref } from 'vue'
-import axios from 'axios'
+import api from '../api'
 import logo from '../assets/mono.jpg'
 
 const tipoEntrega = ref('AVANCE')
@@ -43,7 +43,7 @@ async function enviarEntrega() {
   error.value = ''
 
   try {
-    await axios.post('/api/entregas', formData, {
+    await api.post('/api/entregas', formData, {
       headers: { 'Content-Type': 'multipart/form-data' }
     })
     mensaje.value = 'Entrega registrada correctamente.'
@@ -59,12 +59,16 @@ async function enviarEntrega() {
     enviando.value = false
   }
 }
+
+function quitarArchivo() {
+  archivo.value = null
+  const input = document.getElementById('archivo-input')
+  if (input) input.value = ''
+}
 </script>
 
 <template>
   <div class="entrega-form">
-    <img :src="logo" alt="Logo" class="logo" />
-    <h1>PGT</h1>
     <h2>Presentar Entrega</h2>
 
     <form @submit.prevent="enviarEntrega">
@@ -77,21 +81,27 @@ async function enviarEntrega() {
       </div>
 
       <div class="campo">
-        <label>ID Estudiante</label>
-        <input type="number" v-model="idEstudiante" required />
-      </div>
-
-      <div class="campo">
         <label>Archivo (PDF)</label>
-        <label for="archivo-input" class="file-button">
-            {{ archivo ? archivo.name : 'Seleccionar archivo PDF' }}
-        </label>
+        <div class="file-row">
+            <label for="archivo-input" class="file-button">
+                {{ archivo ? archivo.name : 'Seleccionar archivo PDF' }}
+            </label>
+            <button
+                v-if="archivo"
+                type="button"
+                class="file-clear"
+                @click="quitarArchivo"
+                title="Quitar archivo"
+            >
+                ✕
+            </button>
+        </div>
         <input
             id="archivo-input"
             type="file"
             accept="application/pdf"
             @change="onFileChange"
-            required
+            :required="!archivo"
             class="file-hidden"
         />
       </div>
@@ -109,7 +119,7 @@ async function enviarEntrega() {
 <style scoped>
 .entrega-form {
   max-width: 480px;
-  margin: 1rem auto;
+  margin: 5rem auto;
   padding: 2rem;
   background: #ffffff;
   border-radius: 12px;
@@ -117,17 +127,10 @@ async function enviarEntrega() {
   font-family: system-ui, sans-serif;
 }
 
-h1 {
-  font-size: 5rem;
-  margin-bottom: 1.5rem;
-  color: #1f2937;
-  text-align: center;
-}
-
 h2 {
-  font-size: 1.5rem;
+  font-size: 2rem;
   margin-bottom: 1.5rem;
-  color: #1f2937;
+  color: #000000;
   text-align: center;
 }
 
@@ -140,7 +143,7 @@ h2 {
 label {
   font-weight: 600;
   margin-bottom: 6px;
-  color: #374151;
+  color: #000000;
   font-size: 0.9rem;
 }
 
@@ -154,8 +157,8 @@ input, select {
 
 input:focus, select:focus {
   outline: none;
-  border-color: #302247;
-  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.15);
+  border-color: #0034D9;
+  box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.15);
 }
 
 input[type="file"] {
@@ -166,9 +169,9 @@ button {
   width: 100%;
   padding: 12px;
   margin-top: 0.5rem;
-  background: #6911bb;
-  color: white;
-  border: none;
+  background: #0034D9;
+  color: rgb(255, 255, 255);
+  border: rgb(0, 0, 0);
   border-radius: 8px;
   font-weight: 600;
   font-size: 1rem;
@@ -177,7 +180,7 @@ button {
 }
 
 button:hover:not(:disabled) {
-  background: #2d0750;
+  background: #a75a02;
 }
 
 button:disabled {
@@ -211,28 +214,52 @@ button:disabled {
   display: block;
   width: 100%;
   padding: 10px 12px;
-  border: 1px solid #d1d5db;
+  border: 0px solid #000000;
   border-radius: 8px;
   text-align: center;
   cursor: pointer;
-  background: #f9fafb;
-  color: #374151;
+  background: #29AAE1;
+  color: #ffffff;
   font-size: 0.95rem;
   transition: background 0.2s, border-color 0.2s;
   box-sizing: border-box;
 }
 
 .file-button:hover {
-  background: #f3f4f6;
+  background: #a75a02;
   border-color: #9ca3af;
 }
 
-.logo {
-  position: fixed;
-  top: 16px;
-  left: 16px;
-  width: 200px;
-  z-index: 10;
+.file-row {
+  display: flex;
+  gap: 8px;
+  align-items: stretch;
+}
+
+.file-row .file-button {
+  flex: 1;
+  margin: 0;
+  box-sizing: border-box;
+}
+
+.file-clear {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  background: #29AAE1;
+  color: #000000;
+  border: 1px solid #000000;
+  border-radius: 8px;
+  width: 44px;
+  font-size: 1rem;
+  font-weight: bold;
+  font-family: inherit;
+  line-height: normal;
+  cursor: pointer;
+  transition: background 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 </style>
 
