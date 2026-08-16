@@ -21,15 +21,21 @@ public class EntregaService {
 
     private final ProcesoTesisRepository procesoTesisRepository;
     private final HitoEntregaRepository hitoEntregaRepository;
+
+    private final EmailService emailService;
+
+
     // Constructor para inyectar el repositorio
     public EntregaService(EntregaRepository entregaRepository, 
                           FileStorageService fileStorageService,
                           ProcesoTesisRepository procesoTesisRepository,
-                          HitoEntregaRepository hitoEntregaRepository) {
+                          HitoEntregaRepository hitoEntregaRepository, 
+                          EmailService emailService) {
         this.entregaRepository = entregaRepository;
         this.fileStorageService = fileStorageService;
         this.procesoTesisRepository = procesoTesisRepository;
         this.hitoEntregaRepository = hitoEntregaRepository;
+        this.emailService = emailService;
     }
 
     //covertir entidad a DTO de respuesta
@@ -114,6 +120,20 @@ public class EntregaService {
 
         //Guardar la entrega completa en PostgreSQL
         Entrega entregaGuardada = entregaRepository.save(entrega);
+
+        //Preparacion y encio del correo automatico
+
+        String correoProfesor = "profesor@universidad.local"; 
+        String asunto = "Nueva Entrega de Tesis: " + entregaDTO.getTipoEntrega();
+        String mensaje = "Hola,\n\n"
+                       + "El estudiante (ID: " + entregaDTO.getIdEstudiante() + ") ha subido un nuevo documento al sistema.\n\n"
+                       + "Detalles de la entrega:\n"
+                       + "- Tipo de Entrega: " + entregaDTO.getTipoEntrega() + "\n"
+                       + "- Nombre del Archivo: " + nombreOriginal + "\n"
+                       + "- ID Proceso de Tesis: " + entregaDTO.getIdProcesoTesis() + "\n\n"
+                       + "El documento ha sido guardado exitosamente.";
+
+        emailService.enviarCorreoSimple(correoProfesor, asunto, mensaje);
 
         return convertirADTO(entregaGuardada);
     }
