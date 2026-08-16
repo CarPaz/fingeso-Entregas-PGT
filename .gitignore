@@ -34,3 +34,6 @@ build/
 
 # Ignorar credenciales y configuraciones locales
 application-local.properties
+
+# Archivos PDF guardados localmente
+storage/
