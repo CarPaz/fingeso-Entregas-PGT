@@ -77,7 +77,7 @@ public class EntregaService {
         } else {
             throw new IllegalArgumentException("Error: La entrega debe incluir el ID de un Hito de Entrega.");
         }
-        /*  
+         
         //Validar y asignar los datos obligatorios del DTO
         if (entregaDTO.getTipoEntrega() == null || entregaDTO.getTipoEntrega().isBlank()) {
             throw new IllegalArgumentException("Error: El tipo de entrega es obligatorio.");
@@ -93,7 +93,7 @@ public class EntregaService {
         if (archivo == null || archivo.isEmpty()) {
             throw new IllegalArgumentException("Error: El archivo PDF es obligatorio y no puede estar vacío.");
         }
-        */
+        
 
         //  Extraer metadatos del archivo 
         String nombreOriginal = archivo.getOriginalFilename();
