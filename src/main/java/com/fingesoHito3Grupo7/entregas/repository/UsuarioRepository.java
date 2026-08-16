@@ -9,4 +9,11 @@ public interface UsuarioRepository extends JpaRepository<Usuario, Long> {
 
     // Busca un usuario por su correo institucional (usado en el login)
     Optional<Usuario> findByCorreoInstitucional(String correoInstitucional);
+
+    // Busca un usuario por su RUT
+    Optional<Usuario> findByRut(String rut);
+
+    boolean existsByCorreoInstitucional(String correoInstitucional);
+
+    boolean existsByRut(String rut);
 }

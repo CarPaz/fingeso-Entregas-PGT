@@ -1,0 +1,7 @@
+# Plantilla de ejemplo para usuarios del sistema.
+# Para utilizar en desarrollo local, copie este archivo como 'usuarios.csv' en esta misma carpeta (src/main/resources/usuarios.csv).
+# Valores permitidos en tipo_usuario: TESISTA, PROFESOR, COORDINADOR.
+rut,nombre,correo,contrasena,tipo_usuario
+20111222-3,Estudiante Tesista Ejemplo,tesista@usach.cl,password123,TESISTA
+15333444-5,Profesor Guia Ejemplo,profesor@usach.cl,password123,PROFESOR
+10555666-7,Coordinador Docente Ejemplo,coordinador@usach.cl,password123,COORDINADOR
