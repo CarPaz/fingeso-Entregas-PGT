@@ -3,11 +3,14 @@ package com.fingesoHito3Grupo7.entregas.service;
 import com.fingesoHito3Grupo7.entregas.domain.Entrega;
 import com.fingesoHito3Grupo7.entregas.domain.HitoEntrega;
 import com.fingesoHito3Grupo7.entregas.domain.ProcesoTesis;
+import com.fingesoHito3Grupo7.entregas.domain.Tesista;
 import com.fingesoHito3Grupo7.entregas.dto.EntregaDTO;
 import com.fingesoHito3Grupo7.entregas.dto.EntregaResponseDTO;
 import com.fingesoHito3Grupo7.entregas.repository.EntregaRepository;
 import com.fingesoHito3Grupo7.entregas.repository.HitoEntregaRepository;
 import com.fingesoHito3Grupo7.entregas.repository.ProcesoTesisRepository;
+import com.fingesoHito3Grupo7.entregas.repository.TesistaRepository;
+
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import java.util.stream.Collectors;
@@ -21,15 +24,18 @@ public class EntregaService {
 
     private final ProcesoTesisRepository procesoTesisRepository;
     private final HitoEntregaRepository hitoEntregaRepository;
+    private final TesistaRepository tesistaRepository;
     // Constructor para inyectar el repositorio
     public EntregaService(EntregaRepository entregaRepository, 
                           FileStorageService fileStorageService,
                           ProcesoTesisRepository procesoTesisRepository,
-                          HitoEntregaRepository hitoEntregaRepository) {
+                          HitoEntregaRepository hitoEntregaRepository,
+                          TesistaRepository tesistaRepository) {
         this.entregaRepository = entregaRepository;
         this.fileStorageService = fileStorageService;
         this.procesoTesisRepository = procesoTesisRepository;
         this.hitoEntregaRepository = hitoEntregaRepository;
+        this.tesistaRepository = tesistaRepository;
     }
 
     //covertir entidad a DTO de respuesta
@@ -87,7 +93,11 @@ public class EntregaService {
         if (entregaDTO.getIdEstudiante() == null) {
             throw new IllegalArgumentException("Error: El ID del estudiante es obligatorio.");
         }
-        entrega.setIdEstudiante(entregaDTO.getIdEstudiante());
+        
+        Tesista tesista = tesistaRepository.findById(entregaDTO.getIdEstudiante())
+                .orElseThrow(() -> new RuntimeException("Error: Estudiante no encontrado en la base de datos."));
+        
+        entrega.setEstudiante(tesista);
 
         /// Validacion y guardado del archivo fisico 
         if (archivo == null || archivo.isEmpty()) {

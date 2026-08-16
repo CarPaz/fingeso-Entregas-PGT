@@ -19,7 +19,7 @@ public class EntregaDTO {
     public Long getIdHitoEntrega() { return idHitoEntrega; }
     public void setIdHitoEntrega(Long idHitoEntrega) { this.idHitoEntrega = idHitoEntrega; }
 
-    // 2. Asegúrate de tener estos Getters y Setters
+    
     public String getTipoEntrega() {
         return tipoEntrega;
     }
