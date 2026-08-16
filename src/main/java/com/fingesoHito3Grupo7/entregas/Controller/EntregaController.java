@@ -20,11 +20,11 @@ import java.util.List;
 @RequestMapping("/api/entregas")
 //Para conexion con el front
 @CrossOrigin("*") 
-public class entregaController {
+public class  EntregaController {
     //coneccion a la base de datos 
     private final EntregaService entregaService;
 
-    entregaController(EntregaService entregaService) {
+     EntregaController(EntregaService entregaService) {
         this.entregaService = entregaService;
     }
 
