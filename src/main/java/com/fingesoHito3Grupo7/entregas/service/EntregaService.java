@@ -2,6 +2,7 @@ package com.fingesoHito3Grupo7.entregas.service;
 
 import com.fingesoHito3Grupo7.entregas.domain.Entrega;
 import com.fingesoHito3Grupo7.entregas.domain.HitoEntrega;
+import com.fingesoHito3Grupo7.entregas.domain.Profesor;
 import com.fingesoHito3Grupo7.entregas.domain.ProcesoTesis;
 import com.fingesoHito3Grupo7.entregas.domain.Tesista;
 import com.fingesoHito3Grupo7.entregas.dto.EntregaDTO;
@@ -11,6 +12,8 @@ import com.fingesoHito3Grupo7.entregas.repository.HitoEntregaRepository;
 import com.fingesoHito3Grupo7.entregas.repository.ProcesoTesisRepository;
 import com.fingesoHito3Grupo7.entregas.repository.TesistaRepository;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
@@ -32,6 +35,8 @@ import java.util.stream.Collectors;
  */
 @Service
 public class EntregaService {
+    private static final Logger logger =
+            LoggerFactory.getLogger(EntregaService.class);
 
     /*
      * Estos valores son definidos por el servidor.
@@ -56,6 +61,7 @@ public class EntregaService {
      * Servicio responsable de guardar físicamente el archivo PDF.
      */
     private final FileStorageService fileStorageService;
+    private final EmailService emailService;
 
     /*
      * Spring inyecta automáticamente todas estas dependencias
@@ -66,13 +72,15 @@ public class EntregaService {
             FileStorageService fileStorageService,
             ProcesoTesisRepository procesoTesisRepository,
             HitoEntregaRepository hitoEntregaRepository,
-            TesistaRepository tesistaRepository
+            TesistaRepository tesistaRepository,
+            EmailService emailService
     ) {
         this.entregaRepository = entregaRepository;
         this.fileStorageService = fileStorageService;
         this.procesoTesisRepository = procesoTesisRepository;
         this.hitoEntregaRepository = hitoEntregaRepository;
         this.tesistaRepository = tesistaRepository;
+        this.emailService = emailService;
     }
 
     /*
@@ -357,6 +365,13 @@ public class EntregaService {
                 entregaRepository.save(entrega);
 
         /*
+         * La notificación utiliza el correo institucional del profesor
+         * asociado al proceso de tesis. Una falla de SMTP se registra,
+         * pero no invalida la entrega que ya fue guardada.
+         */
+        notificarProfesor(entregaGuardada);
+
+        /*
          * Se devuelve al frontend un DTO con el registro creado.
          */
         return convertirADTO(entregaGuardada);
@@ -459,6 +474,73 @@ public class EntregaService {
         }
 
         return nombreLimpio;
+    }
+
+    /*
+     * Envía al profesor responsable los datos principales de la entrega.
+     * Los procesos antiguos pueden no tener profesor mientras se completa
+     * la migración de datos; en ese caso se registra una advertencia.
+     */
+    private void notificarProfesor(Entrega entrega) {
+        ProcesoTesis proceso = entrega.getProcesoTesis();
+
+        if (proceso == null) {
+            logger.warn(
+                    "No se envió la notificación porque la entrega no tiene proceso de tesis."
+            );
+            return;
+        }
+
+        Profesor profesor = proceso.getProfesor();
+
+        if (profesor == null) {
+            logger.warn(
+                    "No se envió la notificación de la entrega del proceso {} porque no tiene profesor asociado.",
+                    proceso.getIdProcesoTesis()
+            );
+            return;
+        }
+
+        String correoProfesor = profesor.getCorreoInstitucional();
+
+        if (!StringUtils.hasText(correoProfesor)) {
+            logger.warn(
+                    "No se envió la notificación de la entrega del proceso {} porque el profesor no tiene correo institucional.",
+                    proceso.getIdProcesoTesis()
+            );
+            return;
+        }
+
+        Tesista tesista = entrega.getEstudiante();
+        String identificacionTesista = tesista != null
+                ? String.valueOf(tesista.getIdUsuario())
+                : "no disponible";
+
+        String asunto =
+                "Nueva entrega de tesis: " + entrega.getTipoEntrega();
+
+        String mensaje = "Hola,\n\n"
+                + "El tesista (ID: " + identificacionTesista
+                + ") ha subido un nuevo documento al sistema.\n\n"
+                + "Detalles de la entrega:\n"
+                + "- Tipo de entrega: " + entrega.getTipoEntrega() + "\n"
+                + "- Nombre del archivo: " + entrega.getNombreOriginal() + "\n"
+                + "- ID proceso de tesis: "
+                + proceso.getIdProcesoTesis() + "\n\n"
+                + "El documento fue guardado exitosamente.";
+
+        boolean enviado = emailService.enviarCorreoSimple(
+                correoProfesor,
+                asunto,
+                mensaje
+        );
+
+        if (!enviado) {
+            logger.warn(
+                    "La entrega del proceso {} se guardó, pero su notificación no pudo enviarse.",
+                    proceso.getIdProcesoTesis()
+            );
+        }
     }
 
     /*
