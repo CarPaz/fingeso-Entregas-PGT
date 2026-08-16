@@ -78,10 +78,12 @@ public class Entrega {
 
     /*
      * Referencia al Estudiante/Tesista.
-     * Seguirá siendo una referencia lógica hasta que exista su entidad.
+     * Relación (FK):
+     * entrega.id_estudiante -> tesista.id_usuario
      */
-    @Column(name = "id_estudiante", nullable = false)
-    private Long idEstudiante;
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "id_estudiante", referencedColumnName = "id_usuario", nullable = false)
+    private Tesista estudiante;
 
     // Número de versión del documento entregado.
     @Column(name = "numero_version", nullable = false)
@@ -198,12 +200,12 @@ public class Entrega {
         this.hitoEntrega = hitoEntrega;
     }
 
-    public Long getIdEstudiante() {
-        return idEstudiante;
+    public Tesista getEstudiante() {
+        return estudiante;
     }
 
-    public void setIdEstudiante(Long idEstudiante) {
-        this.idEstudiante = idEstudiante;
+    public void setEstudiante(Tesista estudiante) {
+        this.estudiante = estudiante;
     }
 
     public Integer getNumeroVersion() {
