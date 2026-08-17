@@ -14,6 +14,10 @@ public class ProcesoTesis {
     @Column(name = "id_proceso_tesis")
     private Long idProcesoTesis;
 
+    // Tema acordado para identificar el trabajo de tesis.
+    @Column(name = "tema", nullable = false, length = 255)
+    private String tema;
+
     // Estado general del proceso de tesis.
     @Column(name = "estado", nullable = false, length = 50)
     private String estado;
@@ -39,6 +43,16 @@ public class ProcesoTesis {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "id_profesor")
     private Profesor profesor;
+
+    /*
+     * Tesista propietario del proceso.
+     * La columna admite nulos solamente para permitir que instalaciones
+     * existentes completen sus datos antes de exigir la restricción en BD.
+     * El servicio de entregas rechaza procesos que no tengan tesista.
+     */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "id_tesista")
+    private Tesista tesista;
 
     /*
      * Un proceso de tesis puede tener varias entregas.
@@ -68,6 +82,14 @@ public class ProcesoTesis {
 
     public void setIdProcesoTesis(Long idProcesoTesis) {
         this.idProcesoTesis = idProcesoTesis;
+    }
+
+    public String getTema() {
+        return tema;
+    }
+
+    public void setTema(String tema) {
+        this.tema = tema;
     }
 
     public String getEstado() {
@@ -100,6 +122,14 @@ public class ProcesoTesis {
 
     public void setProfesor(Profesor profesor) {
         this.profesor = profesor;
+    }
+
+    public Tesista getTesista() {
+        return tesista;
+    }
+
+    public void setTesista(Tesista tesista) {
+        this.tesista = tesista;
     }
 
     public List<Entrega> getEntregas() {
