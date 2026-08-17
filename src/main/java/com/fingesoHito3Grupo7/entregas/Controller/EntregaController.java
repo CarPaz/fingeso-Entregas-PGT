@@ -2,6 +2,7 @@ package com.fingesoHito3Grupo7.entregas.controller;
 
 import com.fingesoHito3Grupo7.entregas.dto.EntregaDTO;
 import com.fingesoHito3Grupo7.entregas.dto.EntregaResponseDTO;
+import com.fingesoHito3Grupo7.entregas.dto.OpcionProcesoTesisDTO;
 import com.fingesoHito3Grupo7.entregas.service.EntregaService;
 
 import org.springframework.http.HttpStatus;
@@ -50,6 +51,17 @@ public class EntregaController {
                 autenticacion.getName(),
                 obtenerRol(autenticacion)
         );
+    }
+
+    /*
+     * Devuelve los procesos e hitos seleccionables del tesista conectado.
+     * La identidad proviene del JWT y no de parámetros enviados por la vista.
+     */
+    @GetMapping("/opciones")
+    public List<OpcionProcesoTesisDTO> obtenerOpcionesEntrega(
+            Authentication autenticacion
+    ) {
+        return entregaService.obtenerOpcionesEntrega(autenticacion.getName());
     }
 
     /*

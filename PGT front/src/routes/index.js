@@ -1,8 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import Login from "@/views/Login.vue";
-import LasEntregas from "@/views/LasEntregas.vue";
-import SubirEntregas from "@/views/SubirEntregas.vue";
-import MisEntregas from "@/views/MisEntregas.vue";
+import { leerSesion, resolverRedireccion } from '@/auth/session'
 
 const routes = [
     {
@@ -12,13 +9,13 @@ const routes = [
     {
         path: '/login',
         name: 'login',
-        component: Login,
+        component: () => import('@/views/Login.vue'),
         meta: { title: 'Iniciar sesión' }
     },
     {
         path: '/entregas',
         name: 'entregas',
-        component: LasEntregas,
+        component: () => import('@/views/LasEntregas.vue'),
         meta: {
             title: 'Las Entregas',
             requiresAuth: true,
@@ -28,13 +25,13 @@ const routes = [
     {
         path: '/mis-entregas',
         name: 'mis-entregas',
-        component: MisEntregas,
+        component: () => import('@/views/MisEntregas.vue'),
         meta: { title: 'Mis Entregas', requiresAuth: true, roles: ['TESISTA'] }
     },
     {
         path: '/subir-entregas',
         name: 'subir-entregas',
-        component: SubirEntregas,
+        component: () => import('@/views/SubirEntregas.vue'),
         meta: { title: 'Subir Entregas', requiresAuth: true, roles: ['TESISTA'] }
     },
     {
@@ -53,36 +50,7 @@ const router = createRouter({
 router.beforeEach((to) => {
     document.title = to.meta.title || 'Plataforma de Gestión de Tesistas';
 
-    const token = localStorage.getItem('token');
-    let usuario = {};
-    try {
-        usuario = JSON.parse(localStorage.getItem('usuario') || '{}');
-    } catch {
-        localStorage.removeItem('token');
-        localStorage.removeItem('usuario');
-    }
-
-    const rolesValidos = ['TESISTA', 'PROFESOR', 'COORDINADOR'];
-    const sesionValida = token && rolesValidos.includes(usuario.rol);
-
-    if (token && !sesionValida) {
-        localStorage.removeItem('token');
-        localStorage.removeItem('usuario');
-    }
-
-    const rutaInicial = usuario.rol === 'TESISTA' ? '/mis-entregas' : '/entregas';
-
-    if (to.meta.requiresAuth && !sesionValida) {
-        return '/login';
-    }
-
-    if (to.meta.roles && !to.meta.roles.includes(usuario.rol)) {
-        return rutaInicial;
-    }
-
-    if (to.name === 'login' && sesionValida) {
-        return rutaInicial;
-    }
+    return resolverRedireccion(to, leerSesion())
 });
 
 export default router

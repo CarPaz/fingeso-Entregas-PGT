@@ -70,6 +70,9 @@ public class SecurityConfig {
                 // Solamente un tesista puede registrar entregas de avance o finales
                 .requestMatchers(HttpMethod.POST, "/api/entregas", "/api/entregas/**")
                     .hasRole("TESISTA")
+                // Las opciones de proceso e hito son exclusivas del tesista
+                .requestMatchers(HttpMethod.GET, "/api/entregas/opciones")
+                    .hasRole("TESISTA")
                 // Los tres roles consultan solamente las entregas autorizadas por el servicio
                 .requestMatchers(HttpMethod.GET, "/api/entregas", "/api/entregas/**")
                     .hasAnyRole("TESISTA", "PROFESOR", "COORDINADOR")

@@ -17,23 +17,39 @@
             class="mb-2"
           />
 
-          <v-text-field
+          <v-select
             v-model.number="form.idProcesoTesis"
-            label="ID Proceso de tesis"
-            type="number"
+            :items="opcionesProceso"
+            item-title="titulo"
+            item-value="idProcesoTesis"
+            label="Proceso de tesis"
             :rules="[rules.required]"
             variant="outlined"
             class="mb-2"
+            :loading="loadingOpciones"
+            :disabled="loadingOpciones || opcionesProceso.length === 0"
           />
 
-          <v-text-field
+          <v-select
             v-model.number="form.idHitoEntrega"
-            label="ID Hito de entrega"
-            type="number"
+            :items="opcionesHito"
+            item-title="titulo"
+            item-value="idHitoEntrega"
+            label="Hito de entrega"
             :rules="[rules.required]"
             variant="outlined"
             class="mb-2"
+            :disabled="!form.idProcesoTesis || opcionesHito.length === 0"
           />
+
+          <v-alert
+            v-if="!loadingOpciones && opcionesProceso.length === 0 && !errorMsg"
+            type="info"
+            variant="tonal"
+            class="mb-4"
+          >
+            No tienes un proceso de tesis con hitos disponible para entregar.
+          </v-alert>
 
           <v-file-input
             v-model="form.archivo"
@@ -41,7 +57,7 @@
             accept="application/pdf"
             prepend-icon="mdi-file-pdf-box"
             variant="outlined"
-            :rules="[rules.required, rules.isPdf, rules.maxSize]"
+            :rules="[rules.required, rules.pdf]"
             :hint="`Tamaño máximo: ${MAX_SIZE_MB}MB`"
             persistent-hint
             show-size
@@ -72,7 +88,7 @@
 
           <v-btn
             :loading="loading"
-            :disabled="!isFormValid"
+            :disabled="!isFormValid || loadingOpciones || opcionesHito.length === 0"
             color="primary"
             type="submit"
             block
@@ -86,20 +102,27 @@
 </template>
 
 <script setup>
-import { ref, reactive } from 'vue'
+import { ref, reactive, computed, onMounted, watch } from 'vue'
 import api from '@/api'
 import { useRouter } from 'vue-router'
+import {
+  MAX_SIZE_MB,
+  crearPayloadEntrega,
+  obtenerArchivo,
+  obtenerEndpointEntrega,
+  validarPdf,
+} from '@/services/entregaForm'
 
 const router = useRouter()
-
-const MAX_SIZE_MB = 20
-const MAX_SIZE_BYTES = MAX_SIZE_MB * 1024 * 1024
 
 const formRef = ref(null)
 const isFormValid = ref(false)
 const loading = ref(false)
 const errorMsg = ref('')
 const successMsg = ref('')
+// Comienza activo para evitar mostrar el estado vacío antes de consultar.
+const loadingOpciones = ref(true)
+const procesos = ref([])
 
 // Dropdown para elegir el tipo de envío (decide el endpoint)
 const tipoEnvio = ref('avance')
@@ -115,20 +138,59 @@ const rules = {
     if (Array.isArray(v)) return v.length > 0 || 'Este campo es obligatorio'
     return !!v || 'Este campo es obligatorio'
   },
-  isPdf: (v) => {
-    const file = Array.isArray(v) ? v[0] : v
-    if (!file) return true
-    return file.type === 'application/pdf' || 'El archivo debe ser un PDF'
-  },
-  maxSize: (v) => {
-    const file = Array.isArray(v) ? v[0] : v
-    if (!file) return true
-    return file.size <= MAX_SIZE_BYTES || `El archivo no debe superar ${MAX_SIZE_MB}MB`
-  },
+  pdf: (v) => !obtenerArchivo(v) || validarPdf(v),
 }
 
-function getFile() {
-  return Array.isArray(form.archivo) ? form.archivo[0] : form.archivo
+const opcionesProceso = computed(() => procesos.value.map((proceso) => ({
+  ...proceso,
+  titulo: `${proceso.tema} (${proceso.estado})`,
+})))
+
+const opcionesHito = computed(() => {
+  const proceso = procesos.value.find(
+    (item) => item.idProcesoTesis === form.idProcesoTesis
+  )
+
+  return (proceso?.hitos || []).map((hito) => ({
+    ...hito,
+    titulo: `${hito.nombre} (${hito.estado})`,
+  }))
+})
+
+/*
+ * Al cambiar de proceso se descarta un hito anterior que ya no corresponda.
+ * Si existe una sola alternativa, la interfaz la selecciona automáticamente.
+ */
+watch(() => form.idProcesoTesis, () => {
+  const sigueDisponible = opcionesHito.value.some(
+    (hito) => hito.idHitoEntrega === form.idHitoEntrega
+  )
+  if (!sigueDisponible) form.idHitoEntrega = null
+  if (opcionesHito.value.length === 1) {
+    form.idHitoEntrega = opcionesHito.value[0].idHitoEntrega
+  }
+})
+
+async function cargarOpciones() {
+  loadingOpciones.value = true
+  errorMsg.value = ''
+  try {
+    const respuesta = await api.get('/api/entregas/opciones')
+    procesos.value = respuesta.data
+    if (procesos.value.length === 1) {
+      form.idProcesoTesis = procesos.value[0].idProcesoTesis
+    }
+  } catch (err) {
+    if (err.response?.status === 401) {
+      localStorage.removeItem('token')
+      localStorage.removeItem('usuario')
+      await router.replace('/login')
+    } else {
+      errorMsg.value = 'No fue posible cargar tus procesos e hitos'
+    }
+  } finally {
+    loadingOpciones.value = false
+  }
 }
 
 async function submitForm() {
@@ -138,19 +200,19 @@ async function submitForm() {
   const { valid } = await formRef.value.validate()
   if (!valid) return
 
-  const file = getFile()
-
-  if (file && file.size > MAX_SIZE_BYTES) {
-    errorMsg.value = `El archivo no debe superar ${MAX_SIZE_MB}MB`
+  const file = obtenerArchivo(form.archivo)
+  const validacionArchivo = validarPdf(file)
+  if (validacionArchivo !== true) {
+    errorMsg.value = validacionArchivo
     return
   }
 
   loading.value = true
   try {
-    const entregaPayload = {
-      idProcesoTesis: form.idProcesoTesis,
-      idHitoEntrega: form.idHitoEntrega,
-    }
+    const entregaPayload = crearPayloadEntrega(
+      form.idProcesoTesis,
+      form.idHitoEntrega
+    )
 
     const formData = new FormData()
     formData.append(
@@ -159,10 +221,7 @@ async function submitForm() {
     )
     formData.append('archivo', file)
 
-    const endpoint =
-      tipoEnvio.value === 'avance' ? '/api/entregas/avance' : '/api/entregas/final'
-
-    await api.post(endpoint, formData)
+    await api.post(obtenerEndpointEntrega(tipoEnvio.value), formData)
 
     successMsg.value = 'Entrega enviada correctamente'
     formRef.value.reset()
@@ -184,4 +243,6 @@ async function submitForm() {
     loading.value = false
   }
 }
+
+onMounted(cargarOpciones)
 </script>

@@ -59,6 +59,7 @@
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import api from '@/api'
+import { guardarSesion, rutaInicialPorRol } from '@/auth/session'
 
 const router = useRouter()
 
@@ -87,14 +88,9 @@ async function handleLogin() {
       contrasena: contrasena.value,
     })
 
-    const { token, idUsuario, nombre, correo: correoUsuario, rol } = res.data
-
-    // Guardamos el token y los datos del usuario para usarlos después
-    localStorage.setItem('token', token)
-    localStorage.setItem('usuario', JSON.stringify({ idUsuario, nombre, correo: correoUsuario, rol }))
-
-    const rutaInicial = rol === 'TESISTA' ? '/mis-entregas' : '/entregas'
-    await router.replace(rutaInicial)
+    // La función común valida la respuesta antes de guardar el JWT.
+    const { usuario } = guardarSesion(res.data)
+    await router.replace(rutaInicialPorRol(usuario.rol))
   } catch (err) {
     if (err.response?.status === 401) {
       errorMsg.value = 'Correo o contraseña incorrectos'
