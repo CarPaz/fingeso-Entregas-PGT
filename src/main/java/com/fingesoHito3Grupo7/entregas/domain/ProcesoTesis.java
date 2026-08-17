@@ -14,6 +14,10 @@ public class ProcesoTesis {
     @Column(name = "id_proceso_tesis")
     private Long idProcesoTesis;
 
+    // Tema acordado para identificar el trabajo de tesis.
+    @Column(name = "tema", nullable = false, length = 255)
+    private String tema;
+
     // Estado general del proceso de tesis.
     @Column(name = "estado", nullable = false, length = 50)
     private String estado;
@@ -68,6 +72,14 @@ public class ProcesoTesis {
 
     public void setIdProcesoTesis(Long idProcesoTesis) {
         this.idProcesoTesis = idProcesoTesis;
+    }
+
+    public String getTema() {
+        return tema;
+    }
+
+    public void setTema(String tema) {
+        this.tema = tema;
     }
 
     public String getEstado() {
