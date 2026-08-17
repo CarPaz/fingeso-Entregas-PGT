@@ -7,6 +7,8 @@ import com.fingesoHito3Grupo7.entregas.domain.ProcesoTesis;
 import com.fingesoHito3Grupo7.entregas.domain.Tesista;
 import com.fingesoHito3Grupo7.entregas.dto.EntregaDTO;
 import com.fingesoHito3Grupo7.entregas.dto.EntregaResponseDTO;
+import com.fingesoHito3Grupo7.entregas.dto.OpcionHitoEntregaDTO;
+import com.fingesoHito3Grupo7.entregas.dto.OpcionProcesoTesisDTO;
 import com.fingesoHito3Grupo7.entregas.repository.EntregaRepository;
 import com.fingesoHito3Grupo7.entregas.repository.HitoEntregaRepository;
 import com.fingesoHito3Grupo7.entregas.repository.ProcesoTesisRepository;
@@ -27,6 +29,7 @@ import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.time.LocalDateTime;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
@@ -604,6 +607,52 @@ public class EntregaService {
                 .stream()
                 .map(this::convertirADTO)
                 .collect(Collectors.toList());
+    }
+
+    /*
+     * Entrega al frontend los procesos e hitos que pertenecen al tesista
+     * autenticado. Así la interfaz puede usar listas desplegables y deja de
+     * solicitar identificadores técnicos escritos manualmente.
+     */
+    @Transactional(readOnly = true)
+    public List<OpcionProcesoTesisDTO> obtenerOpcionesEntrega(
+            String correoTesista
+    ) {
+        if (!StringUtils.hasText(correoTesista)) {
+            throw new ResponseStatusException(
+                    HttpStatus.UNAUTHORIZED,
+                    "No existe una sesión autenticada válida."
+            );
+        }
+
+        return procesoTesisRepository
+                .findByTesistaCorreoInstitucionalIgnoreCaseOrderByTemaAsc(
+                        correoTesista
+                )
+                .stream()
+                .map(proceso -> {
+                    List<OpcionHitoEntregaDTO> hitos = proceso.getHitos()
+                            .stream()
+                            .sorted(Comparator.comparing(
+                                    HitoEntrega::getFechaLimite,
+                                    Comparator.nullsLast(Comparator.naturalOrder())
+                            ))
+                            .map(hito -> new OpcionHitoEntregaDTO(
+                                    hito.getIdHitoEntrega(),
+                                    hito.getNombre(),
+                                    hito.getFechaLimite(),
+                                    hito.getEstado()
+                            ))
+                            .toList();
+
+                    return new OpcionProcesoTesisDTO(
+                            proceso.getIdProcesoTesis(),
+                            proceso.getTema(),
+                            proceso.getEstado(),
+                            hitos
+                    );
+                })
+                .toList();
     }
 
     /*

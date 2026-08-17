@@ -118,6 +118,19 @@ class EntregaFlowIntegrationTest {
     void ejecutaLoginSubidaPersistenciaListadoNotificacionYDescarga() throws Exception {
         String tokenTesista = iniciarSesion(tesista.getCorreoInstitucional());
 
+        /*
+         * La vista obtiene procesos e hitos asociados al JWT, por lo que el
+         * tesista no necesita conocer ni escribir identificadores internos.
+         */
+        mockMvc.perform(get("/api/entregas/opciones")
+                        .header("Authorization", "Bearer " + tokenTesista))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].idProcesoTesis")
+                        .value(proceso.getIdProcesoTesis()))
+                .andExpect(jsonPath("$[0].tema").value(proceso.getTema()))
+                .andExpect(jsonPath("$[0].hitos[0].idHitoEntrega")
+                        .value(hito.getIdHitoEntrega()));
+
         MockMultipartFile datosEntrega = new MockMultipartFile(
                 "entrega", "", MediaType.APPLICATION_JSON_VALUE,
                 ("{\"idProcesoTesis\":" + proceso.getIdProcesoTesis()

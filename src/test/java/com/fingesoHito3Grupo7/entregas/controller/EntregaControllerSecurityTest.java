@@ -113,6 +113,26 @@ class EntregaControllerSecurityTest {
                 .andExpect(status().isOk());
     }
 
+    @Test
+    void permiteConsultarOpcionesAlTesista() throws Exception {
+        String token = jwtUtil.generarToken("tesista@universidad.cl", "TESISTA");
+        when(entregaService.obtenerOpcionesEntrega(anyString()))
+                .thenReturn(java.util.List.of());
+
+        mockMvc.perform(get("/api/entregas/opciones")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    void rechazaOpcionesParaProfesor() throws Exception {
+        String token = jwtUtil.generarToken("profesor@universidad.cl", "PROFESOR");
+
+        mockMvc.perform(get("/api/entregas/opciones")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isForbidden());
+    }
+
     private MockMultipartHttpServletRequestBuilder solicitudEntregaAvance(String token) {
         MockMultipartFile entrega = new MockMultipartFile(
                 "entrega",

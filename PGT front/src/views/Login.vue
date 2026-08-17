@@ -1,110 +1,118 @@
-<template>
-  <v-container class="fill-height" fluid>
-    <v-row justify="center" align="center" class="fill-height">
-      <v-col cols="12" sm="8" md="4">
-        <v-card class="pa-4">
-          <v-card-title class="text-h5 text-center mb-2">
-            Iniciar sesión
-          </v-card-title>
-
-          <v-card-text>
-            <v-form ref="formRef" v-model="isFormValid" @submit.prevent="handleLogin">
-              <v-text-field
-                v-model="correo"
-                label="Correo"
-                type="email"
-                :rules="[rules.required, rules.email]"
-                variant="outlined"
-                class="mb-2"
-              />
-
-              <v-text-field
-                v-model="contrasena"
-                label="Contraseña"
-                type="password"
-                :rules="[rules.required]"
-                variant="outlined"
-                class="mb-2"
-              />
-
-              <v-alert
-                v-if="errorMsg"
-                type="error"
-                variant="tonal"
-                class="mb-4"
-                closable
-                @click:close="errorMsg = ''"
-              >
-                {{ errorMsg }}
-              </v-alert>
-
-              <v-btn
-                :loading="loading"
-                :disabled="!isFormValid"
-                color="primary"
-                type="submit"
-                block
-              >
-                Ingresar
-              </v-btn>
-            </v-form>
-          </v-card-text>
-        </v-card>
-      </v-col>
-    </v-row>
-  </v-container>
-</template>
-
 <script setup>
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import api from '@/api'
+import { guardarSesion, rutaInicialPorRol } from '@/auth/session'
 
 const router = useRouter()
-
-const formRef = ref(null)
-const isFormValid = ref(false)
+const correo = ref('')
+const contrasena = ref('')
 const loading = ref(false)
 const errorMsg = ref('')
 
-const correo = ref('')
-const contrasena = ref('')
-
-const rules = {
-  required: (v) => !!v || 'Este campo es obligatorio',
-  email: (v) => /.+@.+\..+/.test(v) || 'Correo inválido',
-}
-
+// Autentica al usuario y conserva el mismo manejo seguro de sesión y roles.
 async function handleLogin() {
   errorMsg.value = ''
-  const { valid } = await formRef.value.validate()
-  if (!valid) return
-
   loading.value = true
+
   try {
-    const res = await api.post('/api/auth/login', {
+    const respuesta = await api.post('/api/auth/login', {
       correo: correo.value,
       contrasena: contrasena.value,
     })
 
-    const { token, idUsuario, nombre, correo: correoUsuario, rol } = res.data
-
-    // Guardamos el token y los datos del usuario para usarlos después
-    localStorage.setItem('token', token)
-    localStorage.setItem('usuario', JSON.stringify({ idUsuario, nombre, correo: correoUsuario, rol }))
-
-    const rutaInicial = rol === 'TESISTA' ? '/mis-entregas' : '/entregas'
-    await router.replace(rutaInicial)
-  } catch (err) {
-    if (err.response?.status === 401) {
+    const { usuario } = guardarSesion(respuesta.data)
+    await router.replace(rutaInicialPorRol(usuario.rol))
+  } catch (error) {
+    if (error.response?.status === 401) {
       errorMsg.value = 'Correo o contraseña incorrectos'
-    } else if (err.response?.status === 429) {
-      errorMsg.value = 'Demasiados intentos. Intentá de nuevo más tarde'
+    } else if (error.response?.status === 429) {
+      errorMsg.value = 'Demasiados intentos. Intenta nuevamente más tarde'
     } else {
-      errorMsg.value = 'Ocurrió un error al iniciar sesión'
+      errorMsg.value = 'No fue posible iniciar sesión'
     }
   } finally {
     loading.value = false
   }
 }
 </script>
+
+<template>
+  <section class="login-page">
+    <div class="login-card">
+      <h1>PGT</h1>
+      <h2>Iniciar Sesión</h2>
+
+      <form @submit.prevent="handleLogin">
+        <label for="correo">Correo</label>
+        <input id="correo" v-model.trim="correo" type="email" autocomplete="username" placeholder="usuario@usach.cl" required />
+
+        <label for="contrasena">Contraseña</label>
+        <input id="contrasena" v-model="contrasena" type="password" autocomplete="current-password" placeholder="••••••••" required />
+
+        <button type="submit" :disabled="loading">
+          {{ loading ? 'Ingresando...' : 'Ingresar' }}
+        </button>
+
+        <p v-if="errorMsg" class="message error" role="alert">{{ errorMsg }}</p>
+      </form>
+    </div>
+  </section>
+</template>
+
+<style scoped>
+.login-page {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 1.5rem;
+  background: var(--pgt-bg);
+}
+
+.login-card {
+  width: min(100%, 390px);
+  padding: 2.5rem;
+  border-radius: 12px;
+  background: white;
+  box-shadow: 0 4px 18px rgb(0 0 0 / 9%);
+}
+
+h1, h2 { margin-top: 0; text-align: center; }
+h1 { margin-bottom: 0.25rem; font-size: 3.2rem; }
+h2 { margin-bottom: 1.8rem; font-size: 1.35rem; }
+
+label {
+  display: block;
+  margin: 1rem 0 0.4rem;
+  font-size: 0.9rem;
+  font-weight: 650;
+}
+
+input {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid #111;
+  border-radius: 8px;
+  background: white;
+}
+
+input:focus { outline: 3px solid rgb(0 52 217 / 16%); border-color: var(--pgt-blue); }
+
+button {
+  width: 100%;
+  margin-top: 1.5rem;
+  padding: 0.75rem;
+  border: 0;
+  border-radius: 8px;
+  color: white;
+  background: var(--pgt-blue);
+  cursor: pointer;
+  font-weight: 700;
+}
+
+button:hover:not(:disabled) { filter: brightness(0.92); }
+button:disabled { opacity: 0.65; cursor: wait; }
+
+.message { margin: 1rem 0 0; padding: 0.75rem; border-radius: 8px; text-align: center; }
+.error { color: var(--pgt-danger); background: #fef2f2; }
+</style>
