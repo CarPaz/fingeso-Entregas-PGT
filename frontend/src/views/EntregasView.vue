@@ -23,6 +23,19 @@ function claseEstado(estado) {
   if (estado === 'CORRECCION_REQUERIDA') return 'badge badge-warn'
   return 'badge badge-pending' // PENDIENTE_REVISION u otros
 }
+
+async function verPdf(idEntrega) {
+  try {
+    const res = await api.get(`/api/entregas/${idEntrega}/archivo`, {
+      responseType: 'blob'
+    })
+    const url = window.URL.createObjectURL(new Blob([res.data], { type: 'application/pdf' }))
+    window.open(url, '_blank')
+  } catch (e) {
+    alert('No se pudo cargar el archivo.')
+    console.error(e)
+  }
+}
 </script>
 
 <template>
@@ -49,6 +62,7 @@ function claseEstado(estado) {
             <th>Hito</th>
             <th>Archivo</th>
             <th>Tamaño</th>
+            <th>Ver</th>
           </tr>
         </thead>
         <tbody>
@@ -58,6 +72,9 @@ function claseEstado(estado) {
             <td>{{ e.idHitoEntrega }}</td>
             <td>{{ e.nombreOriginal }}</td>
             <td>{{ (e.tamanoBytes / 1024).toFixed(1) }} KB</td>
+            <td>
+              <button class="btn-ver" @click="verPdf(e.idEntrega)">Ver PDF</button>
+            </td>
           </tr>
         </tbody>
       </table>
@@ -167,5 +184,19 @@ tr:hover td {
 .badge-pending {
   background: #fffbeb;
   color: #92400e;
+}
+
+.btn-ver {
+  background: #0034D9;
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.85rem;
+}
+
+.btn-ver:hover {
+  background: #a75a02;
 }
 </style>

@@ -44,5 +44,12 @@ public class FileStorageService {
         }
     }
 
+// Metodo que retorna la ruta absoluta de un archivo ya guardado, a partir de su nombre único
+public Path obtenerRutaArchivo(String nombreArchivo) {
+    if (nombreArchivo == null || nombreArchivo.isBlank()) {
+        throw new RuntimeException("El nombre del archivo es obligatorio.");
+    }
+    return this.rootLocation.resolve(nombreArchivo).normalize();
+}    
     
 }

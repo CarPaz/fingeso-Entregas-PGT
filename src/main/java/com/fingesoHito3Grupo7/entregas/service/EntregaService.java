@@ -556,4 +556,19 @@ public class EntregaService {
                 .map(this::convertirADTO)
                 .collect(Collectors.toList());
     }
+
+    @Transactional(readOnly = true)
+    public Entrega obtenerEntregaPorId(Long idEntrega) {
+        return entregaRepository.findById(idEntrega)
+                .orElseThrow(() -> new IllegalArgumentException(
+                        "Entrega no encontrada."
+                ));
+    }
+
+    public Path obtenerRutaFisicaArchivo(Long idEntrega) {
+        Entrega entrega = obtenerEntregaPorId(idEntrega);
+        return fileStorageService.obtenerRutaArchivo(
+                entrega.getNombreAlmacenado()
+        );
+    }
 }
