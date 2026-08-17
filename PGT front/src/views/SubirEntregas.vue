@@ -147,12 +147,9 @@ async function submitForm() {
 
   loading.value = true
   try {
-    const usuario = JSON.parse(localStorage.getItem('usuario') || '{}')
-
     const entregaPayload = {
       idProcesoTesis: form.idProcesoTesis,
       idHitoEntrega: form.idHitoEntrega,
-      idEstudiante: usuario.idUsuario,
     }
 
     const formData = new FormData()

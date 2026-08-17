@@ -44,6 +44,16 @@
           <template #item.tamanoBytes="{ item }">
             {{ formatTamano(item.tamanoBytes) }}
           </template>
+
+          <template #item.acciones="{ item }">
+            <v-btn
+              icon="mdi-download"
+              size="small"
+              variant="text"
+              title="Descargar PDF"
+              @click="descargarArchivo(item)"
+            />
+          </template>
         </v-data-table>
       </v-card-text>
     </v-card>
@@ -74,8 +84,27 @@ const headers = [
   { title: 'Nombre Almacenado', key: 'nombreAlmacenado' },
   { title: 'Tipo MIME', key: 'mimeType' },
   { title: 'Tamaño', key: 'tamanoBytes' },
-  { title: 'Ruta Archivo', key: 'rutaRelativaArchivo' },
+  { title: 'Archivo', key: 'acciones', sortable: false, align: 'end' },
 ]
+
+async function descargarArchivo(entrega) {
+  try {
+    const respuesta = await api.get(
+      `/api/entregas/${entrega.idEntrega}/archivo`,
+      { responseType: 'blob' }
+    )
+    const url = URL.createObjectURL(respuesta.data)
+    const enlace = document.createElement('a')
+    enlace.href = url
+    enlace.download = entrega.nombreOriginal || 'entrega.pdf'
+    enlace.click()
+    URL.revokeObjectURL(url)
+  } catch (err) {
+    errorMsg.value = err.response?.status === 403
+      ? 'No tienes permiso para descargar este archivo'
+      : 'No fue posible descargar el archivo'
+  }
+}
 
 function estadoColor(estado) {
   const colores = {

@@ -66,12 +66,12 @@ class EntregaServiceEmailTest {
 
         Tesista tesista = new Tesista();
         tesista.setIdUsuario(3L);
+        tesista.setCorreoInstitucional("tesista@universidad.cl");
+        proceso.setTesista(tesista);
 
         EntregaDTO dto = new EntregaDTO();
         dto.setIdProcesoTesis(1L);
         dto.setIdHitoEntrega(2L);
-        dto.setIdEstudiante(3L);
-        dto.setTipoEntrega("AVANCE");
 
         MockMultipartFile archivo = new MockMultipartFile(
                 "archivo",
@@ -85,7 +85,7 @@ class EntregaServiceEmailTest {
                 .thenReturn(Optional.of(proceso));
         when(hitoEntregaRepository.findById(2L))
                 .thenReturn(Optional.of(hito));
-        when(tesistaRepository.findById(3L))
+        when(tesistaRepository.findByCorreoInstitucionalIgnoreCase("tesista@universidad.cl"))
                 .thenReturn(Optional.of(tesista));
         when(fileStorageService.guardarArchivo(archivo))
                 .thenReturn("./storage/entregas/archivo-interno.pdf");
@@ -97,7 +97,7 @@ class EntregaServiceEmailTest {
                 any(String.class)
         )).thenReturn(true);
 
-        entregaService.crearEntrega(dto, archivo);
+        entregaService.crearEntrega(dto, archivo, "tesista@universidad.cl");
 
         verify(emailService).enviarCorreoSimple(
                 eq("guia@universidad.cl"),

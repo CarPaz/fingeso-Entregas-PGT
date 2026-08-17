@@ -93,7 +93,7 @@ async function handleLogin() {
     localStorage.setItem('token', token)
     localStorage.setItem('usuario', JSON.stringify({ idUsuario, nombre, correo: correoUsuario, rol }))
 
-    const rutaInicial = rol === 'TESISTA' ? '/subir-entregas' : '/entregas'
+    const rutaInicial = rol === 'TESISTA' ? '/mis-entregas' : '/entregas'
     await router.replace(rutaInicial)
   } catch (err) {
     if (err.response?.status === 401) {

@@ -2,6 +2,7 @@ import { createRouter, createWebHistory } from 'vue-router'
 import Login from "@/views/Login.vue";
 import LasEntregas from "@/views/LasEntregas.vue";
 import SubirEntregas from "@/views/SubirEntregas.vue";
+import MisEntregas from "@/views/MisEntregas.vue";
 
 const routes = [
     {
@@ -23,6 +24,12 @@ const routes = [
             requiresAuth: true,
             roles: ['PROFESOR', 'COORDINADOR'],
         }
+    },
+    {
+        path: '/mis-entregas',
+        name: 'mis-entregas',
+        component: MisEntregas,
+        meta: { title: 'Mis Entregas', requiresAuth: true, roles: ['TESISTA'] }
     },
     {
         path: '/subir-entregas',
@@ -63,7 +70,7 @@ router.beforeEach((to) => {
         localStorage.removeItem('usuario');
     }
 
-    const rutaInicial = usuario.rol === 'TESISTA' ? '/subir-entregas' : '/entregas';
+    const rutaInicial = usuario.rol === 'TESISTA' ? '/mis-entregas' : '/entregas';
 
     if (to.meta.requiresAuth && !sesionValida) {
         return '/login';

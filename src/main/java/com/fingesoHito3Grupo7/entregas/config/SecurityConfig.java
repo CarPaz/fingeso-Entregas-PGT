@@ -18,7 +18,8 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
  * Configuración de Spring Security.
  *
  * Estrategia elegida: STATELESS (sin sesión HTTP en el servidor).
- *  - El frontend es responsable de guardar el idUsuario y el rol en localStorage.
+ *  - El frontend conserva el JWT y la información necesaria para navegar.
+ *  - El backend obtiene la identidad y el rol exclusivamente del JWT validado.
  *  - Cada petición protegida debe incluir un JWT válido.
  *
  * Rutas públicas (sin autenticación):
@@ -69,9 +70,9 @@ public class SecurityConfig {
                 // Solamente un tesista puede registrar entregas de avance o finales
                 .requestMatchers(HttpMethod.POST, "/api/entregas", "/api/entregas/**")
                     .hasRole("TESISTA")
-                // Profesor y coordinador pueden revisar el listado completo
+                // Los tres roles consultan solamente las entregas autorizadas por el servicio
                 .requestMatchers(HttpMethod.GET, "/api/entregas", "/api/entregas/**")
-                    .hasAnyRole("PROFESOR", "COORDINADOR")
+                    .hasAnyRole("TESISTA", "PROFESOR", "COORDINADOR")
                 // Todo lo demás requiere autenticación
                 .anyRequest().authenticated()
             )
