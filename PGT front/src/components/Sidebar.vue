@@ -18,6 +18,14 @@
 
       <v-list-item
         v-if="usuario.rol === 'TESISTA'"
+        prepend-icon="mdi-file-document-outline"
+        title="Mis Entregas"
+        to="/mis-entregas"
+        @click="rail = true"
+      />
+
+      <v-list-item
+        v-if="usuario.rol === 'TESISTA'"
         prepend-icon="mdi-upload-outline"
         title="Subir Entregas"
         to="/subir-entregas"

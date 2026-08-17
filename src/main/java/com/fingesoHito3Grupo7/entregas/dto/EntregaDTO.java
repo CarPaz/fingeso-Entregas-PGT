@@ -5,9 +5,6 @@ public class EntregaDTO {
     private Long idProcesoTesis;
     private Long idHitoEntrega;
 
-    private String tipoEntrega;
-    private Long idEstudiante;
-
     // Constructor vacio
     public EntregaDTO() {
     }
@@ -20,20 +17,4 @@ public class EntregaDTO {
     public void setIdHitoEntrega(Long idHitoEntrega) { this.idHitoEntrega = idHitoEntrega; }
 
     
-    public String getTipoEntrega() {
-        return tipoEntrega;
-    }
-
-    public void setTipoEntrega(String tipoEntrega) {
-        this.tipoEntrega = tipoEntrega;
-    }
-
-    public Long getIdEstudiante() {
-        return idEstudiante;
-    }
-
-    public void setIdEstudiante(Long idEstudiante) {
-        this.idEstudiante = idEstudiante;
-    }
-        
 }

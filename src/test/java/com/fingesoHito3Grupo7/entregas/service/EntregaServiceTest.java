@@ -67,6 +67,8 @@ class EntregaServiceTest {
 
         Tesista tesista = new Tesista();
         tesista.setIdUsuario(3L);
+        tesista.setCorreoInstitucional("tesista@universidad.cl");
+        proceso.setTesista(tesista);
 
         /*
          * Ya existe una versión 2, por lo que la nueva debe ser 3.
@@ -77,7 +79,6 @@ class EntregaServiceTest {
         EntregaDTO dto = new EntregaDTO();
         dto.setIdProcesoTesis(1L);
         dto.setIdHitoEntrega(2L);
-        dto.setIdEstudiante(3L);
 
         /*
          * Archivo simulado que contiene la firma real de un PDF.
@@ -99,7 +100,7 @@ class EntregaServiceTest {
         when(hitoEntregaRepository.findById(2L))
                 .thenReturn(Optional.of(hito));
 
-        when(tesistaRepository.findById(3L))
+        when(tesistaRepository.findByCorreoInstitucionalIgnoreCase("tesista@universidad.cl"))
                 .thenReturn(Optional.of(tesista));
 
         when(entregaRepository
@@ -126,7 +127,7 @@ class EntregaServiceTest {
                 });
 
         EntregaResponseDTO respuesta
-                = entregaService.crearEntrega(dto, archivo);
+                = entregaService.crearEntrega(dto, archivo, "tesista@universidad.cl");
 
         /*
          * Captura de la entidad enviada al repositorio.
@@ -190,6 +191,8 @@ class EntregaServiceTest {
 
         Tesista tesista = new Tesista();
         tesista.setIdUsuario(3L);
+        tesista.setCorreoInstitucional("tesista@universidad.cl");
+        proceso.setTesista(tesista);
 
         /*
      * Ya existe una entrega FINAL con versión 1.
@@ -201,7 +204,6 @@ class EntregaServiceTest {
         EntregaDTO dto = new EntregaDTO();
         dto.setIdProcesoTesis(1L);
         dto.setIdHitoEntrega(2L);
-        dto.setIdEstudiante(3L);
 
         /*
      * Archivo simulado con nombre de entrega final
@@ -224,7 +226,7 @@ class EntregaServiceTest {
         when(hitoEntregaRepository.findById(2L))
                 .thenReturn(Optional.of(hito));
 
-        when(tesistaRepository.findById(3L))
+        when(tesistaRepository.findByCorreoInstitucionalIgnoreCase("tesista@universidad.cl"))
                 .thenReturn(Optional.of(tesista));
 
         /*
@@ -258,7 +260,7 @@ class EntregaServiceTest {
      * Se ejecuta específicamente el registro de entrega FINAL.
          */
         EntregaResponseDTO respuesta
-                = entregaService.crearEntregaFinal(dto, archivo);
+                = entregaService.crearEntregaFinal(dto, archivo, "tesista@universidad.cl");
 
         /*
      * Se captura la entidad que fue enviada al repositorio.

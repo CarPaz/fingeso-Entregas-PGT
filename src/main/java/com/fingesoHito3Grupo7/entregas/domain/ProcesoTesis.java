@@ -45,6 +45,16 @@ public class ProcesoTesis {
     private Profesor profesor;
 
     /*
+     * Tesista propietario del proceso.
+     * La columna admite nulos solamente para permitir que instalaciones
+     * existentes completen sus datos antes de exigir la restricción en BD.
+     * El servicio de entregas rechaza procesos que no tengan tesista.
+     */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "id_tesista")
+    private Tesista tesista;
+
+    /*
      * Un proceso de tesis puede tener varias entregas.
      * mappedBy corresponde al atributo procesoTesis de Entrega.java.
      *
@@ -112,6 +122,14 @@ public class ProcesoTesis {
 
     public void setProfesor(Profesor profesor) {
         this.profesor = profesor;
+    }
+
+    public Tesista getTesista() {
+        return tesista;
+    }
+
+    public void setTesista(Tesista tesista) {
+        this.tesista = tesista;
     }
 
     public List<Entrega> getEntregas() {

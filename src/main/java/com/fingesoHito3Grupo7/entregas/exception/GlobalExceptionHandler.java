@@ -8,6 +8,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.time.Instant;
 import java.util.LinkedHashMap;
@@ -79,6 +80,22 @@ public class GlobalExceptionHandler {
         return ResponseEntity
                 .status(HttpStatus.BAD_REQUEST)
                 .body(crearCuerpoError(HttpStatus.BAD_REQUEST, ex.getMessage()));
+    }
+
+    // -------------------------------------------------------------------------
+    // Errores HTTP explícitos del dominio (401, 403 y 404)
+    // -------------------------------------------------------------------------
+    @ExceptionHandler(ResponseStatusException.class)
+    public ResponseEntity<Map<String, Object>> handleResponseStatus(
+            ResponseStatusException ex) {
+        HttpStatus status = HttpStatus.valueOf(ex.getStatusCode().value());
+        String mensaje = ex.getReason() != null
+                ? ex.getReason()
+                : status.getReasonPhrase();
+
+        return ResponseEntity
+                .status(status)
+                .body(crearCuerpoError(status, mensaje));
     }
 
     // -------------------------------------------------------------------------

@@ -18,6 +18,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.core.io.Resource;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -151,12 +154,14 @@ public class EntregaService {
     @Transactional
     public EntregaResponseDTO crearEntrega(
             EntregaDTO entregaDTO,
-            MultipartFile archivo
+            MultipartFile archivo,
+            String correoTesista
     ) {
         return registrarEntrega(
                 entregaDTO,
                 archivo,
-                TIPO_AVANCE
+                TIPO_AVANCE,
+                correoTesista
         );
     }
 
@@ -169,12 +174,14 @@ public class EntregaService {
     @Transactional
     public EntregaResponseDTO crearEntregaFinal(
             EntregaDTO entregaDTO,
-            MultipartFile archivo
+            MultipartFile archivo,
+            String correoTesista
     ) {
         return registrarEntrega(
                 entregaDTO,
                 archivo,
-                TIPO_FINAL
+                TIPO_FINAL,
+                correoTesista
         );
     }
 
@@ -185,7 +192,8 @@ public class EntregaService {
     private EntregaResponseDTO registrarEntrega(
             EntregaDTO entregaDTO,
             MultipartFile archivo,
-            String tipoEntrega
+            String tipoEntrega,
+            String correoTesista
     ) {
         /*
          * El DTO contiene los identificadores enviados por el frontend.
@@ -197,8 +205,9 @@ public class EntregaService {
         }
 
         /*
-         * Los tres identificadores son obligatorios antes de consultar
-         * sus respectivos repositorios.
+         * El proceso y el hito son seleccionados por el cliente.
+         * La identidad del tesista nunca se recibe desde el navegador:
+         * se obtiene del JWT validado por Spring Security.
          */
         if (entregaDTO.getIdProcesoTesis() == null) {
             throw new IllegalArgumentException(
@@ -212,11 +221,19 @@ public class EntregaService {
             );
         }
 
-        if (entregaDTO.getIdEstudiante() == null) {
-            throw new IllegalArgumentException(
-                    "El ID del estudiante es obligatorio."
+        if (!StringUtils.hasText(correoTesista)) {
+            throw new ResponseStatusException(
+                    HttpStatus.UNAUTHORIZED,
+                    "No fue posible identificar al tesista autenticado."
             );
         }
+
+        Tesista tesista = tesistaRepository
+                .findByCorreoInstitucionalIgnoreCase(correoTesista)
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.FORBIDDEN,
+                        "El usuario autenticado no corresponde a un tesista."
+                ));
 
         /*
          * Se busca el proceso de tesis.
@@ -252,13 +269,19 @@ public class EntregaService {
         }
 
         /*
-         * Se busca al tesista responsable de realizar la entrega.
+         * El proceso debe pertenecer al tesista autenticado.
+         * Esto impide modificar el JSON para entregar en nombre de otra persona.
          */
-        Tesista tesista = tesistaRepository
-                .findById(entregaDTO.getIdEstudiante())
-                .orElseThrow(() -> new IllegalArgumentException(
-                        "Tesista no encontrado."
-                ));
+        if (proceso.getTesista() == null
+                || !Objects.equals(
+                        proceso.getTesista().getIdUsuario(),
+                        tesista.getIdUsuario()
+                )) {
+            throw new ResponseStatusException(
+                    HttpStatus.FORBIDDEN,
+                    "El proceso de tesis no pertenece al tesista autenticado."
+            );
+        }
 
         /*
          * Antes de guardar el archivo se comprueba:
@@ -550,10 +573,109 @@ public class EntregaService {
      * y no realizará cambios en PostgreSQL.
      */
     @Transactional(readOnly = true)
-    public List<EntregaResponseDTO> obtenerTodasLasEntregas() {
-        return entregaRepository.findAll()
+    public List<EntregaResponseDTO> obtenerEntregasAutorizadas(
+            String correoUsuario,
+            String rol
+    ) {
+        if (!StringUtils.hasText(correoUsuario) || !StringUtils.hasText(rol)) {
+            throw new ResponseStatusException(
+                    HttpStatus.UNAUTHORIZED,
+                    "No existe una sesión autenticada válida."
+            );
+        }
+
+        List<Entrega> entregas = switch (rol.toUpperCase(Locale.ROOT)) {
+            case "TESISTA" -> entregaRepository
+                    .findByEstudianteCorreoInstitucionalIgnoreCaseOrderByFechaHoraDesc(
+                            correoUsuario
+                    );
+            case "PROFESOR" -> entregaRepository
+                    .findByProcesoTesisProfesorCorreoInstitucionalIgnoreCaseOrderByFechaHoraDesc(
+                            correoUsuario
+                    );
+            case "COORDINADOR" -> entregaRepository.findAllByOrderByFechaHoraDesc();
+            default -> throw new ResponseStatusException(
+                    HttpStatus.FORBIDDEN,
+                    "El rol autenticado no puede consultar entregas."
+            );
+        };
+
+        return entregas
                 .stream()
                 .map(this::convertirADTO)
                 .collect(Collectors.toList());
+    }
+
+    /*
+     * Recupera el PDF únicamente cuando pertenece al tesista autenticado,
+     * al profesor responsable del proceso o cuando consulta un coordinador.
+     */
+    @Transactional(readOnly = true)
+    public ArchivoEntrega obtenerArchivoAutorizado(
+            Long idEntrega,
+            String correoUsuario,
+            String rol
+    ) {
+        Entrega entrega = entregaRepository.findById(idEntrega)
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND,
+                        "Entrega no encontrada."
+                ));
+
+        if (!puedeConsultar(entrega, correoUsuario, rol)) {
+            throw new ResponseStatusException(
+                    HttpStatus.FORBIDDEN,
+                    "No tienes permiso para acceder a este archivo."
+            );
+        }
+
+        Resource recurso = fileStorageService.recuperarArchivo(
+                entrega.getRutaRelativaArchivo()
+        );
+
+        return new ArchivoEntrega(
+                recurso,
+                entrega.getNombreOriginal(),
+                entrega.getMimeType()
+        );
+    }
+
+    private boolean puedeConsultar(
+            Entrega entrega,
+            String correoUsuario,
+            String rol
+    ) {
+        if (!StringUtils.hasText(correoUsuario) || !StringUtils.hasText(rol)) {
+            return false;
+        }
+
+        if ("COORDINADOR".equalsIgnoreCase(rol)) {
+            return true;
+        }
+
+        if ("TESISTA".equalsIgnoreCase(rol)) {
+            return entrega.getEstudiante() != null
+                    && correoUsuario.equalsIgnoreCase(
+                            entrega.getEstudiante().getCorreoInstitucional()
+                    );
+        }
+
+        if ("PROFESOR".equalsIgnoreCase(rol)) {
+            ProcesoTesis proceso = entrega.getProcesoTesis();
+            return proceso != null
+                    && proceso.getProfesor() != null
+                    && correoUsuario.equalsIgnoreCase(
+                            proceso.getProfesor().getCorreoInstitucional()
+                    );
+        }
+
+        return false;
+    }
+
+    public record ArchivoEntrega(
+            Resource recurso,
+            String nombreOriginal,
+            String mimeType
+    ) {
     }
 }
