@@ -6,7 +6,6 @@ import logo from '../assets/mono.jpg'
 const tipoEntrega = ref('AVANCE')
 const idProcesoTesis = ref(null)
 const idHitoEntrega = ref(null)
-const idEstudiante = ref(null)
 const archivo = ref(null)
 
 const enviando = ref(false)
@@ -25,45 +24,56 @@ function onFileChange(e) {
   archivo.value = file
 }
 
+function quitarArchivo() {
+  archivo.value = null
+  const input = document.getElementById('archivo-input')
+  if (input) input.value = ''
+}
+
 async function enviarEntrega() {
   if (!archivo.value) {
     error.value = 'Debes seleccionar un archivo PDF.'
     return
   }
 
+  const idEstudiante = Number(localStorage.getItem('idUsuario'))
+
+  const entregaData = {
+    idProcesoTesis: Number(idProcesoTesis.value),
+    idHitoEntrega: Number(idHitoEntrega.value),
+    idEstudiante,
+    tipoEntrega: tipoEntrega.value
+  }
+
   const formData = new FormData()
-  formData.append('tipoEntrega', tipoEntrega.value)
-  formData.append('idProcesoTesis', idProcesoTesis.value)
-  formData.append('idHitoEntrega', idHitoEntrega.value)
-  formData.append('idEstudiante', idEstudiante.value)
+  formData.append(
+    'entrega',
+    new Blob([JSON.stringify(entregaData)], { type: 'application/json' })
+  )
   formData.append('archivo', archivo.value)
+
+  const endpoint = tipoEntrega.value === 'FINAL'
+    ? '/api/entregas/final'
+    : '/api/entregas/avance'
 
   enviando.value = true
   mensaje.value = ''
   error.value = ''
 
   try {
-    await api.post('/api/entregas', formData, {
+    await api.post(endpoint, formData, {
       headers: { 'Content-Type': 'multipart/form-data' }
     })
     mensaje.value = 'Entrega registrada correctamente.'
-    // reset simple
     idProcesoTesis.value = null
     idHitoEntrega.value = null
-    idEstudiante.value = null
-    archivo.value = null
+    quitarArchivo()
   } catch (e) {
-    error.value = 'Ocurrió un error al enviar la entrega.'
+    error.value = e.response?.data?.mensaje || 'Ocurrió un error al enviar la entrega.'
     console.error(e)
   } finally {
     enviando.value = false
   }
-}
-
-function quitarArchivo() {
-  archivo.value = null
-  const input = document.getElementById('archivo-input')
-  if (input) input.value = ''
 }
 </script>
 
@@ -81,28 +91,38 @@ function quitarArchivo() {
       </div>
 
       <div class="campo">
+        <label>ID Proceso Tesis</label>
+        <input type="number" v-model="idProcesoTesis" required />
+      </div>
+
+      <div class="campo">
+        <label>ID Hito Entrega</label>
+        <input type="number" v-model="idHitoEntrega" required />
+      </div>
+
+      <div class="campo">
         <label>Archivo (PDF)</label>
         <div class="file-row">
-            <label for="archivo-input" class="file-button">
-                {{ archivo ? archivo.name : 'Seleccionar archivo PDF' }}
-            </label>
-            <button
-                v-if="archivo"
-                type="button"
-                class="file-clear"
-                @click="quitarArchivo"
-                title="Quitar archivo"
-            >
-                ✕
-            </button>
+          <label for="archivo-input" class="file-button">
+            {{ archivo ? archivo.name : 'Seleccionar archivo PDF' }}
+          </label>
+          <button
+            v-if="archivo"
+            type="button"
+            class="file-clear"
+            @click="quitarArchivo"
+            title="Quitar archivo"
+          >
+            ✕
+          </button>
         </div>
         <input
-            id="archivo-input"
-            type="file"
-            accept="application/pdf"
-            @change="onFileChange"
-            :required="!archivo"
-            class="file-hidden"
+          id="archivo-input"
+          type="file"
+          accept="application/pdf"
+          @change="onFileChange"
+          :required="!archivo"
+          class="file-hidden"
         />
       </div>
 

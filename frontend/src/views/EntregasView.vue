@@ -45,17 +45,19 @@ function claseEstado(estado) {
         <thead>
           <tr>
             <th>ID</th>
-            <th>Tipo</th>
-            <th>Fecha</th>
-            <th>Estado</th>
+            <th>Proceso Tesis</th>
+            <th>Hito</th>
+            <th>Archivo</th>
+            <th>Tamaño</th>
           </tr>
         </thead>
         <tbody>
           <tr v-for="e in entregas" :key="e.idEntrega">
             <td>{{ e.idEntrega }}</td>
-            <td>{{ e.tipoEntrega }}</td>
-            <td>{{ e.fechaHora }}</td>
-            <td><span :class="claseEstado(e.estado)">{{ e.estado }}</span></td>
+            <td>{{ e.idProcesoTesis }}</td>
+            <td>{{ e.idHitoEntrega }}</td>
+            <td>{{ e.nombreOriginal }}</td>
+            <td>{{ (e.tamanoBytes / 1024).toFixed(1) }} KB</td>
           </tr>
         </tbody>
       </table>

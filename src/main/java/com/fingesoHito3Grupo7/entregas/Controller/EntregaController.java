@@ -1,4 +1,4 @@
-package com.fingesoHito3Grupo7.entregas.controller;
+package com.fingesoHito3Grupo7.entregas.Controller;
 
 import com.fingesoHito3Grupo7.entregas.dto.EntregaDTO;
 import com.fingesoHito3Grupo7.entregas.dto.EntregaResponseDTO;
@@ -19,7 +19,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/entregas")
 @CrossOrigin("*")
-public class EntregaController {
+public class Entregacontroller {
 
     /*
      * Servicio que contiene las reglas de negocio.
@@ -30,7 +30,7 @@ public class EntregaController {
     /*
      * Spring inyecta automáticamente EntregaService.
      */
-    public EntregaController(EntregaService entregaService) {
+    public Entregacontroller(EntregaService entregaService) {
         this.entregaService = entregaService;
     }
 

@@ -20,14 +20,11 @@ async function iniciarSesion() {
       contrasena: contrasena.value
     })
 
-    // Guardamos la sesión en localStorage
     localStorage.setItem('token', res.data.token)
-    localStorage.setItem('usuario', JSON.stringify({
-      idUsuario: res.data.idUsuario,
-      nombre: res.data.nombre,
-      correo: res.data.correo,
-      rol: res.data.rol
-    }))
+    localStorage.setItem('idUsuario', res.data.idUsuario)
+    localStorage.setItem('nombre', res.data.nombre)
+    localStorage.setItem('rol', res.data.rol)
+    localStorage.setItem('correo', res.data.correo)
 
     router.push('/entregas')
   } catch (e) {

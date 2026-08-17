@@ -1,4 +1,4 @@
-package com.fingesoHito3Grupo7.entregas.controller;
+package com.fingesoHito3Grupo7.entregas.Controller;
 
 import com.fingesoHito3Grupo7.entregas.dto.LoginRequestDTO;
 import com.fingesoHito3Grupo7.entregas.dto.LoginResponseDTO;
@@ -21,11 +21,11 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/api/auth")
 @CrossOrigin("*")
-public class AuthController {
+public class Authcontroller {
 
     private final AuthService authService;
 
-    public AuthController(AuthService authService) {
+    public Authcontroller(AuthService authService) {
         this.authService = authService;
     }
 
