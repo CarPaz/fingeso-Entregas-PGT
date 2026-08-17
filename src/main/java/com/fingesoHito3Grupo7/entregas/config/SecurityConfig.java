@@ -1,8 +1,10 @@
 package com.fingesoHito3Grupo7.entregas.config;
 
 import com.fingesoHito3Grupo7.entregas.security.JwtFilter;
+import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
@@ -17,8 +19,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
  *
  * Estrategia elegida: STATELESS (sin sesión HTTP en el servidor).
  *  - El frontend es responsable de guardar el idUsuario y el rol en localStorage.
- *  - No hay JWT por ahora; la autenticación se hace en cada request
- *    si el front envía los datos del usuario (o se amplía con JWT en el futuro).
+ *  - Cada petición protegida debe incluir un JWT válido.
  *
  * Rutas públicas (sin autenticación):
  *  - POST /api/auth/login   → punto de entrada del login
@@ -65,6 +66,9 @@ public class SecurityConfig {
                 .requestMatchers("/api/auth/**").permitAll()
                 // Actuator (salud de la app) accesible sin autenticar
                 .requestMatchers("/actuator/**").permitAll()
+                // Solamente un tesista puede registrar entregas de avance o finales
+                .requestMatchers(HttpMethod.POST, "/api/entregas", "/api/entregas/**")
+                    .hasRole("TESISTA")
                 // Todo lo demás requiere autenticación
                 .anyRequest().authenticated()
             )
@@ -77,6 +81,18 @@ public class SecurityConfig {
             .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
+    }
+
+    /**
+     * JwtFilter es un componente de Spring y también se agrega manualmente a la
+     * cadena de Security. Se desactiva su registro como filtro web general para
+     * evitar que se ejecute antes de que Spring Security prepare su contexto.
+     */
+    @Bean
+    public FilterRegistrationBean<JwtFilter> desactivarRegistroWebDeJwtFilter() {
+        FilterRegistrationBean<JwtFilter> registro = new FilterRegistrationBean<>(jwtFilter);
+        registro.setEnabled(false);
+        return registro;
     }
 
     /**

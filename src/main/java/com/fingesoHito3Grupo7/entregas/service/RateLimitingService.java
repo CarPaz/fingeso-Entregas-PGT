@@ -29,8 +29,13 @@ public class RateLimitingService {
 
     // Estructura interna para registrar el estado de cada clave
     private static class EstadoIntento {
-        int intentosFallidos = 0;
-        Instant bloqueadoHasta = null;
+        private final int intentosFallidos;
+        private final Instant bloqueadoHasta;
+
+        EstadoIntento(int intentosFallidos, Instant bloqueadoHasta) {
+            this.intentosFallidos = intentosFallidos;
+            this.bloqueadoHasta = bloqueadoHasta;
+        }
     }
 
     // Mapa concurrente: clave → estado de intentos
@@ -62,7 +67,7 @@ public class RateLimitingService {
 
         // Si el bloqueo ya expiró, limpiar el estado
         if (estado.bloqueadoHasta != null && !Instant.now().isBefore(estado.bloqueadoHasta)) {
-            intentos.remove(clave);
+            intentos.remove(clave, estado);
         }
     }
 
@@ -70,12 +75,22 @@ public class RateLimitingService {
      * Registra un intento fallido. Si se supera el límite, activa el bloqueo.
      */
     public void registrarIntentoFallido(String clave) {
-        EstadoIntento estado = intentos.computeIfAbsent(clave, k -> new EstadoIntento());
-        estado.intentosFallidos++;
+        /*
+         * compute ejecuta toda la actualización de una clave como una sola operación.
+         * Así dos solicitudes simultáneas no pueden leer el mismo contador y perder
+         * uno de los incrementos.
+         */
+        intentos.compute(clave, (k, estadoActual) -> {
+            int nuevosIntentos = estadoActual == null
+                    ? 1
+                    : estadoActual.intentosFallidos + 1;
 
-        if (estado.intentosFallidos >= maxIntentos) {
-            estado.bloqueadoHasta = Instant.now().plusSeconds(bloqueoSegundos);
-        }
+            Instant bloqueadoHasta = nuevosIntentos >= maxIntentos
+                    ? Instant.now().plusSeconds(bloqueoSegundos)
+                    : null;
+
+            return new EstadoIntento(nuevosIntentos, bloqueadoHasta);
+        });
     }
 
     /**
