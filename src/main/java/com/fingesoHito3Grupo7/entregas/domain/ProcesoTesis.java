@@ -30,6 +30,17 @@ public class ProcesoTesis {
     private Double calificacionFinal;
 
     /*
+     * Profesor responsable de acompañar el proceso de tesis.
+     *
+     * La relación permanece opcional mientras se actualizan los procesos
+     * existentes. Cuando está disponible, su correo institucional se utiliza
+     * como destinatario de las notificaciones de nuevas entregas.
+     */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "id_profesor")
+    private Profesor profesor;
+
+    /*
      * Un proceso de tesis puede tener varias entregas.
      * mappedBy corresponde al atributo procesoTesis de Entrega.java.
      *
@@ -81,6 +92,14 @@ public class ProcesoTesis {
 
     public void setCalificacionFinal(Double calificacionFinal) {
         this.calificacionFinal = calificacionFinal;
+    }
+
+    public Profesor getProfesor() {
+        return profesor;
+    }
+
+    public void setProfesor(Profesor profesor) {
+        this.profesor = profesor;
     }
 
     public List<Entrega> getEntregas() {

@@ -34,3 +34,8 @@ build/
 
 # Ignorar credenciales y configuraciones locales
 application-local.properties
+src/main/resources/usuarios.csv
+usuarios.csv
+
+# Archivos PDF guardados localmente
+storage/

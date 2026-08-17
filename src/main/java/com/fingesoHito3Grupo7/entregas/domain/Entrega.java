@@ -35,8 +35,8 @@ public class Entrega {
     private String nombreAlmacenado;
 
     // Ubicación utilizada para recuperar el archivo.
-    @Column(name = "ruta_relativa", nullable = false, length = 500)
-    private String rutaRelativa;
+    @Column(name = "ruta_relativa_archivo", nullable = false, length = 500)
+    private String rutaRelativaArchivo;
 
     // Tipo MIME validado. Para este proyecto debería ser application/pdf.
     @Column(name = "mime_type", nullable = false, length = 100)
@@ -78,10 +78,12 @@ public class Entrega {
 
     /*
      * Referencia al Estudiante/Tesista.
-     * Seguirá siendo una referencia lógica hasta que exista su entidad.
+     * Relación (FK):
+     * entrega.id_estudiante -> tesista.id_usuario
      */
-    @Column(name = "id_estudiante", nullable = false)
-    private Long idEstudiante;
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "id_estudiante", referencedColumnName = "id_usuario", nullable = false)
+    private Tesista estudiante;
 
     // Número de versión del documento entregado.
     @Column(name = "numero_version", nullable = false)
@@ -150,12 +152,12 @@ public class Entrega {
         this.nombreAlmacenado = nombreAlmacenado;
     }
 
-    public String getRutaRelativa() {
-        return rutaRelativa;
+    public String getRutaRelativaArchivo() {
+        return rutaRelativaArchivo;
     }
 
-    public void setRutaRelativa(String rutaRelativa) {
-        this.rutaRelativa = rutaRelativa;
+    public void setRutaRelativaArchivo(String rutaArchivo) {
+        this.rutaRelativaArchivo = rutaArchivo;
     }
 
     public String getMimeType() {
@@ -198,12 +200,12 @@ public class Entrega {
         this.hitoEntrega = hitoEntrega;
     }
 
-    public Long getIdEstudiante() {
-        return idEstudiante;
+    public Tesista getEstudiante() {
+        return estudiante;
     }
 
-    public void setIdEstudiante(Long idEstudiante) {
-        this.idEstudiante = idEstudiante;
+    public void setEstudiante(Tesista estudiante) {
+        this.estudiante = estudiante;
     }
 
     public Integer getNumeroVersion() {
