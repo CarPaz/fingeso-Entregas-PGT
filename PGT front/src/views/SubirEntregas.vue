@@ -1,130 +1,21 @@
-<template>
-  <v-container class="py-8">
-    <v-card>
-      <v-card-title class="text-h5">Nueva entrega</v-card-title>
-
-      <v-card-text>
-        <v-form ref="formRef" v-model="isFormValid" @submit.prevent="submitForm">
-          <v-select
-            v-model="tipoEnvio"
-            :items="[
-              { title: 'Entrega de avance', value: 'avance' },
-              { title: 'Entrega final', value: 'final' },
-            ]"
-            label="¿Qué vas a entregar?"
-            :rules="[rules.required]"
-            variant="outlined"
-            class="mb-2"
-          />
-
-          <v-select
-            v-model.number="form.idProcesoTesis"
-            :items="opcionesProceso"
-            item-title="titulo"
-            item-value="idProcesoTesis"
-            label="Proceso de tesis"
-            :rules="[rules.required]"
-            variant="outlined"
-            class="mb-2"
-            :loading="loadingOpciones"
-            :disabled="loadingOpciones || opcionesProceso.length === 0"
-          />
-
-          <v-select
-            v-model.number="form.idHitoEntrega"
-            :items="opcionesHito"
-            item-title="titulo"
-            item-value="idHitoEntrega"
-            label="Hito de entrega"
-            :rules="[rules.required]"
-            variant="outlined"
-            class="mb-2"
-            :disabled="!form.idProcesoTesis || opcionesHito.length === 0"
-          />
-
-          <v-alert
-            v-if="!loadingOpciones && opcionesProceso.length === 0 && !errorMsg"
-            type="info"
-            variant="tonal"
-            class="mb-4"
-          >
-            No tienes un proceso de tesis con hitos disponible para entregar.
-          </v-alert>
-
-          <v-file-input
-            v-model="form.archivo"
-            label="Archivo PDF"
-            accept="application/pdf"
-            prepend-icon="mdi-file-pdf-box"
-            variant="outlined"
-            :rules="[rules.required, rules.pdf]"
-            :hint="`Tamaño máximo: ${MAX_SIZE_MB}MB`"
-            persistent-hint
-            show-size
-            class="mb-2"
-          />
-
-          <v-alert
-            v-if="errorMsg"
-            type="error"
-            variant="tonal"
-            class="mb-4"
-            closable
-            @click:close="errorMsg = ''"
-          >
-            {{ errorMsg }}
-          </v-alert>
-
-          <v-alert
-            v-if="successMsg"
-            type="success"
-            variant="tonal"
-            class="mb-4"
-            closable
-            @click:close="successMsg = ''"
-          >
-            {{ successMsg }}
-          </v-alert>
-
-          <v-btn
-            :loading="loading"
-            :disabled="!isFormValid || loadingOpciones || opcionesHito.length === 0"
-            color="primary"
-            type="submit"
-            block
-          >
-            Enviar
-          </v-btn>
-        </v-form>
-      </v-card-text>
-    </v-card>
-  </v-container>
-</template>
-
 <script setup>
 import { ref, reactive, computed, onMounted, watch } from 'vue'
-import api from '@/api'
 import { useRouter } from 'vue-router'
+import api from '@/api'
 import {
   MAX_SIZE_MB,
   crearPayloadEntrega,
-  obtenerArchivo,
   obtenerEndpointEntrega,
   validarPdf,
 } from '@/services/entregaForm'
 
 const router = useRouter()
-
-const formRef = ref(null)
-const isFormValid = ref(false)
+const archivoInput = ref(null)
 const loading = ref(false)
+const loadingOpciones = ref(true)
 const errorMsg = ref('')
 const successMsg = ref('')
-// Comienza activo para evitar mostrar el estado vacío antes de consultar.
-const loadingOpciones = ref(true)
 const procesos = ref([])
-
-// Dropdown para elegir el tipo de envío (decide el endpoint)
 const tipoEnvio = ref('avance')
 
 const form = reactive({
@@ -133,43 +24,35 @@ const form = reactive({
   archivo: null,
 })
 
-const rules = {
-  required: (v) => {
-    if (Array.isArray(v)) return v.length > 0 || 'Este campo es obligatorio'
-    return !!v || 'Este campo es obligatorio'
-  },
-  pdf: (v) => !obtenerArchivo(v) || validarPdf(v),
-}
-
-const opcionesProceso = computed(() => procesos.value.map((proceso) => ({
-  ...proceso,
-  titulo: `${proceso.tema} (${proceso.estado})`,
-})))
-
 const opcionesHito = computed(() => {
   const proceso = procesos.value.find(
     (item) => item.idProcesoTesis === form.idProcesoTesis
   )
-
-  return (proceso?.hitos || []).map((hito) => ({
-    ...hito,
-    titulo: `${hito.nombre} (${hito.estado})`,
-  }))
+  return proceso?.hitos || []
 })
 
-/*
- * Al cambiar de proceso se descarta un hito anterior que ya no corresponda.
- * Si existe una sola alternativa, la interfaz la selecciona automáticamente.
- */
+// Al cambiar el proceso solo se permiten sus hitos relacionados.
 watch(() => form.idProcesoTesis, () => {
-  const sigueDisponible = opcionesHito.value.some(
-    (hito) => hito.idHitoEntrega === form.idHitoEntrega
-  )
-  if (!sigueDisponible) form.idHitoEntrega = null
+  if (!opcionesHito.value.some((hito) => hito.idHitoEntrega === form.idHitoEntrega)) {
+    form.idHitoEntrega = null
+  }
   if (opcionesHito.value.length === 1) {
     form.idHitoEntrega = opcionesHito.value[0].idHitoEntrega
   }
 })
+
+function seleccionarArchivo(evento) {
+  const archivo = evento.target.files?.[0] || null
+  const validacion = validarPdf(archivo)
+  if (archivo && validacion !== true) {
+    errorMsg.value = validacion
+    evento.target.value = ''
+    form.archivo = null
+    return
+  }
+  errorMsg.value = ''
+  form.archivo = archivo
+}
 
 async function cargarOpciones() {
   loadingOpciones.value = true
@@ -180,8 +63,8 @@ async function cargarOpciones() {
     if (procesos.value.length === 1) {
       form.idProcesoTesis = procesos.value[0].idProcesoTesis
     }
-  } catch (err) {
-    if (err.response?.status === 401) {
+  } catch (error) {
+    if (error.response?.status === 401) {
       localStorage.removeItem('token')
       localStorage.removeItem('usuario')
       await router.replace('/login')
@@ -197,47 +80,37 @@ async function submitForm() {
   errorMsg.value = ''
   successMsg.value = ''
 
-  const { valid } = await formRef.value.validate()
-  if (!valid) return
-
-  const file = obtenerArchivo(form.archivo)
-  const validacionArchivo = validarPdf(file)
-  if (validacionArchivo !== true) {
-    errorMsg.value = validacionArchivo
+  const validacion = validarPdf(form.archivo)
+  if (!form.idProcesoTesis || !form.idHitoEntrega || validacion !== true) {
+    errorMsg.value = validacion !== true
+      ? validacion
+      : 'Debes seleccionar el proceso y el hito de entrega'
     return
   }
 
   loading.value = true
   try {
-    const entregaPayload = crearPayloadEntrega(
-      form.idProcesoTesis,
-      form.idHitoEntrega
-    )
-
+    const entrega = crearPayloadEntrega(form.idProcesoTesis, form.idHitoEntrega)
     const formData = new FormData()
-    formData.append(
-      'entrega',
-      new Blob([JSON.stringify(entregaPayload)], { type: 'application/json' })
-    )
-    formData.append('archivo', file)
+    formData.append('entrega', new Blob([JSON.stringify(entrega)], { type: 'application/json' }))
+    formData.append('archivo', form.archivo)
 
     await api.post(obtenerEndpointEntrega(tipoEnvio.value), formData)
 
     successMsg.value = 'Entrega enviada correctamente'
-    formRef.value.reset()
-    tipoEnvio.value = 'avance'
-  } catch (err) {
-    if (err.response?.status === 401) {
-      errorMsg.value = 'Tu sesión expiró, iniciá sesión de nuevo'
+    form.archivo = null
+    if (archivoInput.value) archivoInput.value.value = ''
+  } catch (error) {
+    if (error.response?.status === 401) {
       localStorage.removeItem('token')
       localStorage.removeItem('usuario')
-      router.push('/login')
-    } else if (err.response?.status === 403) {
+      await router.replace('/login')
+    } else if (error.response?.status === 403) {
       errorMsg.value = 'Tu usuario no tiene permiso para subir entregas'
-    } else if (err.response?.status === 413) {
-      errorMsg.value = `El archivo es demasiado grande. Máximo ${MAX_SIZE_MB}MB`
+    } else if (error.response?.status === 413) {
+      errorMsg.value = `El archivo supera el máximo de ${MAX_SIZE_MB} MB`
     } else {
-      errorMsg.value = err.response?.data?.mensaje || 'Ocurrió un error al enviar los datos'
+      errorMsg.value = error.response?.data?.mensaje || 'No fue posible registrar la entrega'
     }
   } finally {
     loading.value = false
@@ -246,3 +119,71 @@ async function submitForm() {
 
 onMounted(cargarOpciones)
 </script>
+
+<template>
+  <section class="form-page">
+    <div class="form-card">
+      <h1>PGT</h1>
+      <h2>Presentar Entrega</h2>
+
+      <form @submit.prevent="submitForm">
+        <label for="tipo">Tipo de entrega</label>
+        <select id="tipo" v-model="tipoEnvio">
+          <option value="avance">Avance</option>
+          <option value="final">Final</option>
+        </select>
+
+        <label for="proceso">Proceso de tesis</label>
+        <select id="proceso" v-model.number="form.idProcesoTesis" :disabled="loadingOpciones" required>
+          <option :value="null" disabled>{{ loadingOpciones ? 'Cargando...' : 'Selecciona un proceso' }}</option>
+          <option v-for="proceso in procesos" :key="proceso.idProcesoTesis" :value="proceso.idProcesoTesis">
+            {{ proceso.tema }} ({{ proceso.estado }})
+          </option>
+        </select>
+
+        <label for="hito">Hito de entrega</label>
+        <select id="hito" v-model.number="form.idHitoEntrega" :disabled="!form.idProcesoTesis" required>
+          <option :value="null" disabled>Selecciona un hito</option>
+          <option v-for="hito in opcionesHito" :key="hito.idHitoEntrega" :value="hito.idHitoEntrega">
+            {{ hito.nombre }} ({{ hito.estado }})
+          </option>
+        </select>
+
+        <label>Archivo (PDF)</label>
+        <label for="archivo" class="file-button">
+          {{ form.archivo?.name || 'Seleccionar archivo PDF' }}
+        </label>
+        <input id="archivo" ref="archivoInput" class="file-hidden" type="file" accept="application/pdf" required @change="seleccionarArchivo" />
+        <small>Tamaño máximo: {{ MAX_SIZE_MB }} MB</small>
+
+        <button type="submit" :disabled="loading || loadingOpciones || opcionesHito.length === 0">
+          {{ loading ? 'Enviando...' : 'Enviar Entrega' }}
+        </button>
+
+        <p v-if="!loadingOpciones && procesos.length === 0" class="message info">No tienes procesos con hitos disponibles.</p>
+        <p v-if="errorMsg" class="message error" role="alert">{{ errorMsg }}</p>
+        <p v-if="successMsg" class="message success" role="status">{{ successMsg }}</p>
+      </form>
+    </div>
+  </section>
+</template>
+
+<style scoped>
+.form-page { min-height: calc(100vh - 68px); padding: 3.5rem 1rem; background: white; }
+.form-card { width: min(100%, 545px); margin: 0 auto; padding: 2rem; border-radius: 12px; background: white; box-shadow: 0 4px 18px rgb(0 0 0 / 10%); }
+h1, h2 { margin-top: 0; text-align: center; }
+h1 { margin-bottom: 1rem; font-size: 4rem; line-height: 1; }
+h2 { margin-bottom: 1.7rem; font-size: 1.45rem; }
+label { display: block; margin: 1rem 0 0.4rem; font-size: 0.9rem; font-weight: 650; }
+select { width: 100%; min-height: 43px; padding: 0.65rem 0.8rem; border: 1px solid #111; border-radius: 8px; background: white; }
+select:focus { outline: 3px solid rgb(0 52 217 / 15%); border-color: var(--pgt-blue); }
+.file-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; opacity: 0; }
+.file-button { width: 100%; margin-top: 0; padding: 0.7rem; border-radius: 8px; color: white; background: var(--pgt-cyan); text-align: center; cursor: pointer; }
+small { display: block; margin-top: 0.35rem; color: #6b7280; }
+button { width: 100%; margin-top: 1.5rem; padding: 0.75rem; border: 0; border-radius: 8px; color: white; background: var(--pgt-blue); cursor: pointer; font-weight: 700; }
+button:disabled { opacity: 0.6; cursor: not-allowed; }
+.message { margin: 1rem 0 0; padding: 0.75rem; border-radius: 8px; text-align: center; }
+.error { color: var(--pgt-danger); background: #fef2f2; }
+.success { color: var(--pgt-success); background: #ecfdf5; }
+.info { color: #1e40af; background: #eff6ff; }
+</style>

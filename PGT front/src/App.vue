@@ -1,71 +1,53 @@
 <script setup>
 import { RouterView, useRoute } from 'vue-router'
-import { ref } from 'vue'
-import Sidebar from '@/components/Sidebar.vue' // ajustá la ruta según donde lo tengas
+import NavBar from '@/components/NavBar.vue'
 
-const rail = ref(false)
 const route = useRoute()
 </script>
 
 <template>
-  <v-app>
-    <Sidebar v-if="route.meta.requiresAuth" v-model:rail="rail" />
-
-    <v-main>
-      <RouterView />
-    </v-main>
-  </v-app>
+  <!-- El login ocupa toda la pantalla; las demás vistas comparten la cabecera. -->
+  <NavBar v-if="route.meta.requiresAuth" />
+  <main :class="{ 'page-with-navbar': route.meta.requiresAuth }">
+    <RouterView />
+  </main>
 </template>
 
 <style>
-/* Estilos globales básicos */
 :root {
-  --primary: #1976D2;
-  --secondary: #424242;
-  --accent: #82B1FF;
-  --error: #FF5252;
-  --warning: #FFC107;
-  --info: #2196F3;
-  --success: #4CAF50;
+  --pgt-blue: #0034d9;
+  --pgt-cyan: #29aae1;
+  --pgt-bg: #f3f4f6;
+  --pgt-text: #111827;
+  --pgt-danger: #991b1b;
+  --pgt-success: #065f46;
 }
 
-/* * {
-  margin: 0;
-  padding: 0;
+* {
   box-sizing: border-box;
-} */
+}
+
+html,
+body,
+#app {
+  min-height: 100%;
+  margin: 0;
+}
 
 body {
-  font-family: 'Roboto', sans-serif;
-  line-height: 1.6;
+  color: var(--pgt-text);
+  background: var(--pgt-bg);
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
 
-/* Ajustes para el contenedor principal */
-.fill-height {
-  height: 100%;
+.page-with-navbar {
+  min-height: 100vh;
+  padding-top: 68px;
 }
 
-/* Ajustes para el scrollbar */
-::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+button,
+input,
+select {
+  font: inherit;
 }
-
-::-webkit-scrollbar-track {
-  background: #f1f1f1;
-}
-
-::-webkit-scrollbar-thumb {
-  background: #ccc;
-  border-radius: 4px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: #aaa;
-}
-
-html, body, #app {
-  height: 100%;
-}
-
 </style>
