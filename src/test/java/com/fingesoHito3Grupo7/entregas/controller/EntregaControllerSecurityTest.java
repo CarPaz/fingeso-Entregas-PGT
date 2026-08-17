@@ -15,10 +15,12 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockMultipartHttpServletRequestBuilder;
 
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(
@@ -71,6 +73,41 @@ class EntregaControllerSecurityTest {
 
         mockMvc.perform(solicitudEntregaAvance(token))
                 .andExpect(status().isCreated());
+    }
+
+    @Test
+    void rechazaListadoSinAutenticacion() throws Exception {
+        mockMvc.perform(get("/api/entregas"))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void rechazaListadoDeTesista() throws Exception {
+        String token = jwtUtil.generarToken("tesista@universidad.cl", "TESISTA");
+
+        mockMvc.perform(get("/api/entregas")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void permiteListadoDeProfesor() throws Exception {
+        String token = jwtUtil.generarToken("profesor@universidad.cl", "PROFESOR");
+        when(entregaService.obtenerTodasLasEntregas()).thenReturn(List.of());
+
+        mockMvc.perform(get("/api/entregas")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    void permiteListadoDeCoordinador() throws Exception {
+        String token = jwtUtil.generarToken("coordinador@universidad.cl", "COORDINADOR");
+        when(entregaService.obtenerTodasLasEntregas()).thenReturn(List.of());
+
+        mockMvc.perform(get("/api/entregas")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk());
     }
 
     private MockMultipartHttpServletRequestBuilder solicitudEntregaAvance(String token) {

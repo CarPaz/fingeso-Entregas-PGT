@@ -18,7 +18,6 @@ import java.util.List;
  */
 @RestController
 @RequestMapping("/api/entregas")
-@CrossOrigin("*")
 public class EntregaController {
 
     /*

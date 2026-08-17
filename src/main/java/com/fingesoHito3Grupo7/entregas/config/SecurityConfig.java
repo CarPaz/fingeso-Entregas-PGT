@@ -69,6 +69,9 @@ public class SecurityConfig {
                 // Solamente un tesista puede registrar entregas de avance o finales
                 .requestMatchers(HttpMethod.POST, "/api/entregas", "/api/entregas/**")
                     .hasRole("TESISTA")
+                // Profesor y coordinador pueden revisar el listado completo
+                .requestMatchers(HttpMethod.GET, "/api/entregas", "/api/entregas/**")
+                    .hasAnyRole("PROFESOR", "COORDINADOR")
                 // Todo lo demás requiere autenticación
                 .anyRequest().authenticated()
             )

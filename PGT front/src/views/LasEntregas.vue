@@ -17,15 +17,6 @@
           {{ errorMsg }}
         </v-alert>
 
-        <v-alert
-          v-if="usandoDatosEjemplo"
-          type="info"
-          variant="tonal"
-          class="mb-4"
-        >
-          Mostrando datos de ejemplo (no se pudo conectar al backend)
-        </v-alert>
-
         <v-data-table
           :headers="headers"
           :items="entregas"
@@ -61,12 +52,13 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
-import axios from 'axios'
+import { useRouter } from 'vue-router'
+import api from '@/api'
 
 const entregas = ref([])
 const loading = ref(false)
 const errorMsg = ref('')
-const usandoDatosEjemplo = ref(false)
+const router = useRouter()
 
 // Mismos atributos que devuelve EntregaResponseDTO en el backend
 const headers = [
@@ -83,70 +75,6 @@ const headers = [
   { title: 'Tipo MIME', key: 'mimeType' },
   { title: 'Tamaño', key: 'tamanoBytes' },
   { title: 'Ruta Archivo', key: 'rutaRelativaArchivo' },
-]
-
-// Datos de ejemplo, se usan solo si falla la conexión al backend
-const entregasEjemplo = [
-  {
-    idEntrega: 1,
-    idProcesoTesis: 1,
-    idHitoEntrega: 1,
-    idEstudiante: 5,
-    tipoEntrega: 'AVANCE',
-    estado: 'PENDIENTE_REVISION',
-    numeroVersion: 1,
-    fechaHora: '2026-08-10T14:30:00',
-    nombreOriginal: 'avance_capitulo1.pdf',
-    nombreAlmacenado: 'a1b2c3d4_avance_capitulo1.pdf',
-    mimeType: 'application/pdf',
-    tamanoBytes: 2457600,
-    rutaRelativaArchivo: 'storage/entregas/a1b2c3d4_avance_capitulo1.pdf',
-  },
-  {
-    idEntrega: 2,
-    idProcesoTesis: 1,
-    idHitoEntrega: 2,
-    idEstudiante: 6,
-    tipoEntrega: 'AVANCE',
-    estado: 'APROBADA',
-    numeroVersion: 2,
-    fechaHora: '2026-08-12T09:15:00',
-    nombreOriginal: 'avance_capitulo2.pdf',
-    nombreAlmacenado: 'e5f6g7h8_avance_capitulo2.pdf',
-    mimeType: 'application/pdf',
-    tamanoBytes: 3145728,
-    rutaRelativaArchivo: 'storage/entregas/e5f6g7h8_avance_capitulo2.pdf',
-  },
-  {
-    idEntrega: 3,
-    idProcesoTesis: 2,
-    idHitoEntrega: 3,
-    idEstudiante: 7,
-    tipoEntrega: 'FINAL',
-    estado: 'CORRECCION_REQUERIDA',
-    numeroVersion: 1,
-    fechaHora: '2026-08-14T17:45:00',
-    nombreOriginal: 'tesis_final.pdf',
-    nombreAlmacenado: 'i9j0k1l2_tesis_final.pdf',
-    mimeType: 'application/pdf',
-    tamanoBytes: 8912896,
-    rutaRelativaArchivo: 'storage/entregas/i9j0k1l2_tesis_final.pdf',
-  },
-  {
-    idEntrega: 4,
-    idProcesoTesis: 2,
-    idHitoEntrega: 4,
-    idEstudiante: 8,
-    tipoEntrega: 'AVANCE',
-    estado: 'PENDIENTE_REVISION',
-    numeroVersion: 3,
-    fechaHora: '2026-08-15T11:20:00',
-    nombreOriginal: 'avance_metodologia.pdf',
-    nombreAlmacenado: 'm3n4o5p6_avance_metodologia.pdf',
-    mimeType: 'application/pdf',
-    tamanoBytes: 1843200,
-    rutaRelativaArchivo: 'storage/entregas/m3n4o5p6_avance_metodologia.pdf',
-  },
 ]
 
 function estadoColor(estado) {
@@ -174,16 +102,20 @@ function formatTamano(bytes) {
 async function fetchEntregas() {
   loading.value = true
   errorMsg.value = ''
-  usandoDatosEjemplo.value = false
   try {
-    const res = await axios.get('/api/entregas', {
-      headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
-    })
+    const res = await api.get('/api/entregas')
     entregas.value = res.data
   } catch (err) {
-    entregas.value = entregasEjemplo
-    usandoDatosEjemplo.value = true
-    errorMsg.value = 'No se pudieron cargar las entregas reales, mostrando ejemplos'
+    entregas.value = []
+    if (err.response?.status === 401) {
+      localStorage.removeItem('token')
+      localStorage.removeItem('usuario')
+      await router.replace('/login')
+    } else if (err.response?.status === 403) {
+      errorMsg.value = 'Tu usuario no tiene permiso para revisar todas las entregas'
+    } else {
+      errorMsg.value = 'No se pudieron cargar las entregas'
+    }
   } finally {
     loading.value = false
   }

@@ -58,7 +58,7 @@
 <script setup>
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
-import axios from 'axios'
+import api from '@/api'
 
 const router = useRouter()
 
@@ -76,20 +76,16 @@ const rules = {
 }
 
 async function handleLogin() {
-  console.log('1 - función llamada')
   errorMsg.value = ''
   const { valid } = await formRef.value.validate()
-  console.log('2 - validado:', valid)
   if (!valid) return
 
   loading.value = true
   try {
-    console.log('3 - antes del axios.post')
-    const res = await axios.post('/api/auth/login', {
+    const res = await api.post('/api/auth/login', {
       correo: correo.value,
       contrasena: contrasena.value,
     })
-    console.log('4 - respuesta recibida', res) 
 
     const { token, idUsuario, nombre, correo: correoUsuario, rol } = res.data
 
@@ -97,9 +93,9 @@ async function handleLogin() {
     localStorage.setItem('token', token)
     localStorage.setItem('usuario', JSON.stringify({ idUsuario, nombre, correo: correoUsuario, rol }))
 
-    router.push('subir-entregas')
+    const rutaInicial = rol === 'TESISTA' ? '/subir-entregas' : '/entregas'
+    await router.replace(rutaInicial)
   } catch (err) {
-    console.log('5 - error capturado', err)  
     if (err.response?.status === 401) {
       errorMsg.value = 'Correo o contraseña incorrectos'
     } else if (err.response?.status === 429) {
@@ -109,7 +105,6 @@ async function handleLogin() {
     }
   } finally {
     loading.value = false
-    console.log('6 - finally ejecutado, loading:', loading.value)
   }
 }
 </script>

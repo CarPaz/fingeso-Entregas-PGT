@@ -69,7 +69,7 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
-import axios from 'axios'
+import api from '@/api'
 
 const entregas = ref([])
 const loading = ref(false)
@@ -105,11 +105,7 @@ async function fetchEntregas() {
   loading.value = true
   errorMsg.value = ''
   try {
-    const res = await axios.get('/api/entregas', {
-      headers: {
-        Authorization: `Bearer ${localStorage.getItem('token')}`
-      }
-    })
+    const res = await api.get('/api/entregas')
     entregas.value = res.data
   } catch (err) {
     if (err.response?.status === 401) {

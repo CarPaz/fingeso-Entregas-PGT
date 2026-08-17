@@ -87,7 +87,7 @@
 
 <script setup>
 import { ref, reactive } from 'vue'
-import axios from 'axios'
+import api from '@/api'
 import { useRouter } from 'vue-router'
 
 const router = useRouter()
@@ -165,11 +165,7 @@ async function submitForm() {
     const endpoint =
       tipoEnvio.value === 'avance' ? '/api/entregas/avance' : '/api/entregas/final'
 
-    await axios.post(endpoint, formData, {
-      headers: {
-        Authorization: `Bearer ${localStorage.getItem('token')}`,
-      },
-    })
+    await api.post(endpoint, formData)
 
     successMsg.value = 'Entrega enviada correctamente'
     formRef.value.reset()
@@ -178,7 +174,10 @@ async function submitForm() {
     if (err.response?.status === 401) {
       errorMsg.value = 'Tu sesión expiró, iniciá sesión de nuevo'
       localStorage.removeItem('token')
+      localStorage.removeItem('usuario')
       router.push('/login')
+    } else if (err.response?.status === 403) {
+      errorMsg.value = 'Tu usuario no tiene permiso para subir entregas'
     } else if (err.response?.status === 413) {
       errorMsg.value = `El archivo es demasiado grande. Máximo ${MAX_SIZE_MB}MB`
     } else {

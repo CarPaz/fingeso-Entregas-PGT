@@ -16,7 +16,13 @@
         @click="rail = true"
       />
 
-      <v-list-item prepend-icon="mdi-upload-outline" title="Subir Entregas" to="/subir-entregas" @click="rail = true" />
+      <v-list-item
+        v-if="usuario.rol === 'TESISTA'"
+        prepend-icon="mdi-upload-outline"
+        title="Subir Entregas"
+        to="/subir-entregas"
+        @click="rail = true"
+      />
     </v-list>
 
     <template #append>
@@ -29,6 +35,7 @@
 </template>
 
 <script setup>
+import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 
 const rail = defineModel('rail', { default: false })
@@ -40,5 +47,12 @@ function handleLogout() {
   localStorage.removeItem('usuario')
   router.push('/login')
 }
-const usuario = JSON.parse(localStorage.getItem('usuario') || '{}')
+
+const usuario = ref({})
+try {
+  usuario.value = JSON.parse(localStorage.getItem('usuario') || '{}')
+} catch {
+  localStorage.removeItem('token')
+  localStorage.removeItem('usuario')
+}
 </script>

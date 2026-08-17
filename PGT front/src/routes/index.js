@@ -1,5 +1,4 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import ViewTest from "@/views/ViewTest.vue";
 import Login from "@/views/Login.vue";
 import LasEntregas from "@/views/LasEntregas.vue";
 import SubirEntregas from "@/views/SubirEntregas.vue";
@@ -29,13 +28,7 @@ const routes = [
         path: '/subir-entregas',
         name: 'subir-entregas',
         component: SubirEntregas,
-        meta: { title: 'Subir Entregas', requiresAuth: true }
-    },
-    {
-        path: '/test',
-        name: 'test',
-        component: ViewTest,
-        meta: { title: 'Test', requiresAuth: true }
+        meta: { title: 'Subir Entregas', requiresAuth: true, roles: ['TESISTA'] }
     },
     {
         path: '/:pathMatch(.*)*',
@@ -54,14 +47,34 @@ router.beforeEach((to) => {
     document.title = to.meta.title || 'Plataforma de Gestión de Tesistas';
 
     const token = localStorage.getItem('token');
-    const usuario = JSON.parse(localStorage.getItem('usuario') || '{}');
+    let usuario = {};
+    try {
+        usuario = JSON.parse(localStorage.getItem('usuario') || '{}');
+    } catch {
+        localStorage.removeItem('token');
+        localStorage.removeItem('usuario');
+    }
 
-    if (to.meta.requiresAuth && !token) {
+    const rolesValidos = ['TESISTA', 'PROFESOR', 'COORDINADOR'];
+    const sesionValida = token && rolesValidos.includes(usuario.rol);
+
+    if (token && !sesionValida) {
+        localStorage.removeItem('token');
+        localStorage.removeItem('usuario');
+    }
+
+    const rutaInicial = usuario.rol === 'TESISTA' ? '/subir-entregas' : '/entregas';
+
+    if (to.meta.requiresAuth && !sesionValida) {
         return '/login';
     }
 
     if (to.meta.roles && !to.meta.roles.includes(usuario.rol)) {
-        return '/login';
+        return rutaInicial;
+    }
+
+    if (to.name === 'login' && sesionValida) {
+        return rutaInicial;
     }
 });
 

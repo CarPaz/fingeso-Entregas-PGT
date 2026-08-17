@@ -1,5 +1,4 @@
 import {createApp} from 'vue';
-import axios from 'axios';
 import router from './routes';
 import App from './App.vue';
 
@@ -58,11 +57,6 @@ const vuetify = createVuetify({
 });      
 
 
-//configuarcion global axios 
-axios.defaults.baseURL = 'http://localhost:8080';
-axios.defaults.headers.common['Content-Type'] = 'application/json';
-
-
 //creacion Aplicacion vue
 const app = createApp(App);
 
@@ -72,6 +66,4 @@ app.use(router);
 app.use(vuetify);
 
 
-//axios global 
-app.config.globalProperties.$axios = axios;
 app.mount('#app');
