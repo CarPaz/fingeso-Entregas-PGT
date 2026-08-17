@@ -160,7 +160,7 @@ onMounted(cargarOpciones)
           {{ loading ? 'Enviando...' : 'Enviar Entrega' }}
         </button>
 
-        <p v-if="!loadingOpciones && procesos.length === 0" class="message info">No tienes procesos con hitos disponibles.</p>
+        <p v-if="!loadingOpciones && procesos.length === 0 && !errorMsg" class="message info">No tienes procesos con hitos disponibles.</p>
         <p v-if="errorMsg" class="message error" role="alert">{{ errorMsg }}</p>
         <p v-if="successMsg" class="message success" role="status">{{ successMsg }}</p>
       </form>
